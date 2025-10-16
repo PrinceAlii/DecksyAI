@@ -3,6 +3,7 @@ export interface DeckCard {
   key: string;
   levelRequirement: number;
   isChamp?: boolean;
+  image?: string;
 }
 
 export interface DeckDefinition {

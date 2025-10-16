@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { ArrowLeft, Clock } from "lucide-react";
 
 import { Container } from "@/components/ui/container";
@@ -14,11 +15,10 @@ interface HistoryRecord {
   decks?: unknown;
 }
 
-async function fetchHistory(): Promise<HistoryRecord[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}` : "";
-  const response = await fetch(`${baseUrl}/api/history`, {
+async function fetchHistory(origin: string): Promise<HistoryRecord[]> {
+  const url = new URL("/api/history", origin);
+  const response = await fetch(url, {
     cache: "no-store",
-    next: { revalidate: 0 },
   });
 
   if (!response.ok) {
@@ -30,7 +30,15 @@ async function fetchHistory(): Promise<HistoryRecord[]> {
 }
 
 export default async function HistoryPage() {
-  const recommendations = await fetchHistory();
+  const requestHeaders = headers();
+  const origin =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim() && process.env.NEXT_PUBLIC_BASE_URL.trim().length > 0
+      ? process.env.NEXT_PUBLIC_BASE_URL.trim()
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const recommendations = await fetchHistory(origin);
 
   return (
     <div className="bg-background py-16">

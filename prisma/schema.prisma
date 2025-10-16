@@ -19,7 +19,6 @@ model User {
   profile       Profile?
   recommendations Recommendation[]
   feedback      Feedback[]
-  billing       Billing?
 }
 
 model Profile {
@@ -91,16 +90,6 @@ model Feedback {
   userId           String?
   rating           Int
   notes            String?
-}
-
-model Billing {
-  id              String   @id @default(cuid())
-  user            User     @relation(fields: [userId], references: [id])
-  userId          String   @unique
-  stripeCustomerId String?
-  stripeSubscriptionId String?
-  plan            String   @default("free")
-  renewedAt       DateTime?
 }
 
 model AuditLog {

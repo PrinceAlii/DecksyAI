@@ -11,8 +11,8 @@ Decksy AI is a Next.js 14 App Router application that provides Clash Royale play
 - **Design System:** Dark-first theme with custom color tokens (see `tailwind.config.ts`)
 - **Backend:** Prisma ORM targeting PostgreSQL (automatically disabled when `DATABASE_URL` is missing)
 - **Caching:** Redis via `ioredis` (falls back to in-memory Map when `REDIS_URL` is missing)
-- **Integrations:** Clash Royale API adapters, Gemini explainers, Stripe checkout stub
-- **Planned:** Auth.js/Clerk, full Stripe subscription lifecycle, analytics/monitoring
+- **Integrations:** Clash Royale API adapters, Gemini explainers
+- **Planned:** Auth.js/Clerk, analytics/monitoring
 
 ### Import Aliases
 - Use `@/*` for all `src/*` imports (configured in `tsconfig.json`)
@@ -162,7 +162,7 @@ interface PlayerData {
 ## Testing & Validation
 
 ### Current State
-- No test suite yet (planned for post-scaffolding)
+- Vitest unit coverage for prompt helpers (`npm test`)
 - Manual testing via dev server
 - ESLint for code quality
 
@@ -190,4 +190,4 @@ interface PlayerData {
 ---
 
 **Last Updated:** November 24, 2025
-**Project Status:** Core recommendation loop shipped; auth, subscriptions, and analytics still pending
+**Project Status:** Core recommendation loop shipped; auth and analytics still pending

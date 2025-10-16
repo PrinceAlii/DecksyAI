@@ -1,5 +1,7 @@
-import { notFound } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
 import { ArrowLeft, ListChecks } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +15,7 @@ interface ExplainerRecord {
     name: string;
     description: string;
     averageElixir: number;
-    cards: { name: string; key: string; levelRequirement: number }[];
+    cards: { name: string; key: string; levelRequirement: number; image?: string }[];
     strengths: string[];
     weaknesses: string[];
   };
@@ -24,11 +26,15 @@ interface ExplainerRecord {
   }[];
 }
 
-async function fetchExplainer(slug: string, sessionId?: string) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}` : "";
-  const response = await fetch(`${baseUrl}/api/coach?deck=${slug}${sessionId ? `&sessionId=${sessionId}` : ""}`, {
+async function fetchExplainer(slug: string, origin: string, sessionId?: string) {
+  const url = new URL(`/api/coach`, origin);
+  url.searchParams.set("deck", slug);
+  if (sessionId) {
+    url.searchParams.set("sessionId", sessionId);
+  }
+
+  const response = await fetch(url, {
     cache: "no-store",
-    next: { revalidate: 0 },
   });
 
   if (!response.ok) {
@@ -51,7 +57,15 @@ export default async function DeckPage({
     notFound();
   }
 
-  const data = await fetchExplainer(deck.slug, searchParams.sessionId);
+  const requestHeaders = headers();
+  const origin =
+    process.env.NEXT_PUBLIC_BASE_URL?.trim() && process.env.NEXT_PUBLIC_BASE_URL.trim().length > 0
+      ? process.env.NEXT_PUBLIC_BASE_URL.trim()
+      : process.env.VERCEL_URL
+        ? `https://${process.env.VERCEL_URL}`
+        : `http://${requestHeaders.get("host") ?? "localhost:3000"}`;
+
+  const data = await fetchExplainer(deck.slug, origin, searchParams.sessionId);
   const explainer = data?.explainers?.[0];
 
   return (
@@ -65,7 +79,7 @@ export default async function DeckPage({
         </Button>
 
         <Card className="border-border/60 bg-surface">
-          <CardContent className="grid gap-6 p-6">
+          <CardContent className="flex flex-col gap-8 p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h1 className="text-3xl font-semibold text-text">{deck.name}</h1>
@@ -76,16 +90,37 @@ export default async function DeckPage({
               </Badge>
             </div>
 
-            <div className="grid gap-3 md:grid-cols-2">
-              {deck.cards.map((card) => (
-                <div
-                  key={card.key}
-                  className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-muted/40 px-4 py-3"
-                >
-                  <span className="text-sm font-medium text-text">{card.name}</span>
-                  <span className="text-xs text-text-muted">Lvl {card.levelRequirement}</span>
-                </div>
-              ))}
+            <div className="flex flex-col gap-3">
+              <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">Card lineup</h2>
+              <div className="grid gap-3 sm:grid-cols-4">
+                {deck.cards.map((card) => {
+                  const imageSrc = card.image ?? `https://royaleapi.github.io/static/img/cards-150/${card.key}.png`;
+                  return (
+                    <div
+                      key={card.key}
+                      className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center"
+                    >
+                      <div
+                        className="relative aspect-[3/4] w-full overflow-hidden rounded-md bg-surface bg-cover bg-center"
+                        style={{ backgroundImage: "url(/cards/placeholder.svg)" }}
+                      >
+                        <Image
+                          src={imageSrc}
+                          alt={card.name}
+                          fill
+                          sizes="(max-width: 640px) 33vw, 160px"
+                          className="object-cover"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-text">{card.name}</p>
+                        <p className="text-xs text-text-muted">Lvl {card.levelRequirement}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
