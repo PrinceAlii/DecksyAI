@@ -22,9 +22,9 @@
 - **Framework:** Next.js 14+ (App Router) + TypeScript (strict mode)
 - **Styling:** Tailwind CSS (dark theme by default)
 - **UI Components:** Radix UI primitives + class-variance-authority
-- **Hosting:** Vercel (planned)
-- **Database:** PostgreSQL (Supabase) + Prisma ORM (planned)
-- **Caching:** Redis (planned)
+- **Hosting & Deployment:** Heroku — this project is deployed to Heroku. Link the GitHub repository `PrinceAlii/DecksyAI` to your Heroku app for automatic deploys from `main`, or deploy manually via the Heroku CLI.
+- **Database:** Heroku Postgres + Prisma ORM (production via Heroku Postgres addon; local dev can use a local Postgres instance)
+- **Caching:** Heroku Redis (or a managed Redis addon). The code falls back to an in-memory Map when `REDIS_URL` is not set.
 
 ### Integrations (Planned)
 - **Clash Royale API:** Player data, cards, battles (server-only)

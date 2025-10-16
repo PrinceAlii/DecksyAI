@@ -34,8 +34,8 @@ yarn-error.log*
 .env.test.local
 .env.production.local
 
-# Vercel
-.vercel
+# Hosting provider files
+# This project is deployed to Heroku; no provider-specific files are checked in by default.
 
 # TypeScript
 *.tsbuildinfo

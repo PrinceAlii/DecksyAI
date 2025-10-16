@@ -62,7 +62,18 @@ export function getServerEnv(): Env {
       REDIS_TLS_ALLOW_SELF_SIGNED: process.env.REDIS_TLS_ALLOW_SELF_SIGNED,
       REDIS_ALLOW_INSECURE_TLS: process.env.REDIS_ALLOW_INSECURE_TLS,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
-      NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      // Ensure NEXTAUTH_URL is an absolute URL. If it's not provided, attempt to
+      // infer a sensible default for local development. This prevents runtime
+      // errors from APIs that call `new URL(..., NEXTAUTH_URL)` when the
+      // environment variable was set to a bare host like "localhost:3000"
+      // or omitted entirely.
+      NEXTAUTH_URL: (() => {
+        const raw = process.env.NEXTAUTH_URL?.trim();
+        if (raw && raw.length > 0) return raw;
+        if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+        if ((process.env.NODE_ENV ?? "development") === "development") return "http://localhost:3000";
+        return undefined;
+      })(),
       AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID,
       AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
       RESEND_API_KEY: process.env.RESEND_API_KEY,

@@ -7,7 +7,7 @@
 ## 0) TL;DR Requirements
 
 - **Platform:** Web app (Next.js + TypeScript)
-- **Hosting:** Vercel
+- **Hosting:** Heroku (this repository is intended to be deployed to Heroku). Link the GitHub repository `PrinceAlii/DecksyAI` to a Heroku app for automatic deploys from `main` or deploy via the Heroku CLI.
 - **Design:** Dark theme (sleek, modern, minimal), accessible
 - **Data sources:** Clash Royale API (player, cards, battles), internal deck catalog (JSON/DB)
 - **AI:** Google Gemini API (text generation + JSON output)
@@ -148,7 +148,17 @@ Server-only keys, rate limiting, validated input, data minimization, privacy pol
 
 ## 11) Deployment
 
-Vercel hosting, Supabase DB, Redis caching, environment variables for API keys.
+Heroku hosting (recommended):
+
+- Link this GitHub repository to your Heroku app to enable automatic deploys from branches (for example, `main`).
+- Use the Heroku Postgres addon for the production database. Set `DATABASE_URL` and (optionally) `DIRECT_URL` from the Heroku Postgres config vars.
+- Use the Heroku Redis addon for caching. Set `REDIS_URL` from the Heroku Redis config vars.
+
+Local development:
+
+- You can still run locally using a local Postgres and Redis, or rely on the in-memory fallbacks if you prefer not to configure external services while developing.
+
+Environment variables must be set in Heroku Config Vars (or `.env.local` for local dev). Key variables include `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_URL`, and `NEXTAUTH_SECRET`.
 
 ---
 

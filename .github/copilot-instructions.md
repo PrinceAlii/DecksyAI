@@ -71,15 +71,25 @@ npm run build        # Production build
 npm run lint         # ESLint checks
 ```
 
-### Database & Cache Setup
-- Copy `.env.example` to `.env` and populate secrets.
-- Provide a Postgres connection string in `DATABASE_URL` (and `DIRECT_URL` if using Supabase connection pooling).
-- Generate the Prisma client with `npx prisma generate`.
-- Apply schema changes:
-  - Local dev: `npx prisma migrate dev --name init`
-  - Production/CI: `npx prisma migrate deploy`
-- Leaving `DATABASE_URL` empty keeps Prisma disabled and routes fall back to the in-memory recommendation store.
-- Set `REDIS_URL` (e.g., `redis://localhost:6379`). When omitted the cache helpers default to an in-memory Map.
+### Database & Cache Setup (Heroku)
+- This project is designed to run on Heroku in production. Use the Heroku Postgres and Heroku Redis addons for production instances.
+- Link the GitHub repository to the Heroku app for automatic deploys, or deploy via the Heroku CLI.
+
+Steps (Heroku):
+
+1. Create a Heroku app and provision addons:
+   - `heroku addons:create heroku-postgresql:hobby-dev`
+   - `heroku addons:create heroku-redis:hobby-basic`
+
+2. Link the app to your GitHub repo `PrinceAlii/DecksyAI` in the Heroku dashboard under "Deploy" and enable automatic deploys from `main`, or push via the Heroku CLI.
+
+3. Set config vars (Heroku Dashboard → Settings → Config Vars) such as `DATABASE_URL`, `REDIS_URL`, `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `GEMINI_API_KEY`, etc. Heroku will populate the addon-provided values for `DATABASE_URL` and `REDIS_URL` automatically.
+
+4. Generate the Prisma client as part of your build or deployment step: `npx prisma generate`. For migrations in production use `npx prisma migrate deploy`.
+
+Local development:
+
+- Copy `.env.example` to `.env` and populate credentials. For local development it's fine to use `redis://localhost:6379` and a local Postgres instance, or rely on the in-memory fallbacks for quick iterations.
 
 ### File Structure Conventions
 ```
