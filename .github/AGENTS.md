@@ -108,17 +108,16 @@ public/                 # Static assets
 7. **Actions:** Copy deck link, share, save to history (post-auth)
 8. **Feedback Loop:** Collect win/loss data after 10 battles (Pro tier)
 
-### Planned API Routes
-- `GET /api/player/:tag` - Fetch player data from Clash Royale API
-- `GET /api/battles/:tag` - Fetch recent battles
-- `POST /api/recommend` - Generate deck recommendations (scoring engine)
-- `POST /api/coach` - Get AI coaching for specific deck (Gemini)
-- `POST /api/feedback` - Submit deck feedback
-- `POST /api/stripe/*` - Stripe webhook & subscription management
+### Implemented API Routes
+- `GET /api/player/:tag` – Clash Royale profile fetch with Redis caching and mock fallback
+- `GET /api/battles/:tag` – Recent battle log (external fetch with graceful mock fallback)
+- `POST /api/recommend` – Deterministic scoring + Gemini explainers + persistence/in-memory fallback
+- `POST /api/coach` – Gemini-powered coaching explainer stub
+- `POST /api/feedback` – Persists feedback (Prisma) or stores in-memory when DB absent
+- `GET /api/history` – Lists recent recommendation sessions
+- `POST /api/stripe/checkout` – Stripe checkout stub for Pro upsell experiments
 
----
-- `POST /api/feedback` - Submit deck feedback
-- `POST /api/stripe/*` - Stripe webhook & subscription management
+Additional planned endpoints (`/api/stripe/*` webhooks, auth callbacks) remain TODO.
 
 ---
 
@@ -174,6 +173,26 @@ export { Example, exampleVariants };
 
 ---
 
+## Environment Setup
+
+1. Copy `.env.example` to `.env` and populate secrets (see template below).
+2. Install dependencies and generate the Prisma client:
+   ```bash
+   npm install
+   npx prisma generate
+   ```
+3. Initialise the Postgres schema:
+   ```bash
+   # local development (creates migration files if they do not exist)
+   npx prisma migrate dev --name init
+
+   # production / CI (applies existing migrations only)
+   npx prisma migrate deploy
+   ```
+4. (Optional) Connect Redis. If `REDIS_URL` is not set the caching helpers fall back to an in-memory Map—perfectly fine for local development.
+
+Use `redis://localhost:6379` for a local Redis instance or supply your Upstash URL in production.
+
 ## Environment Variables
 
 ```env
@@ -185,6 +204,7 @@ GEMINI_API_KEY=
 
 # Database
 DATABASE_URL=
+DIRECT_URL=
 
 # Redis
 REDIS_URL=
@@ -199,6 +219,7 @@ NEXTAUTH_URL=
 
 # Analytics
 NEXT_PUBLIC_POSTHOG_KEY=
+NEXT_PUBLIC_BASE_URL=
 
 # Monitoring
 SENTRY_DSN=
@@ -225,35 +246,29 @@ SENTRY_DSN=
 ### ✅ Completed
 - Project scaffolding (Next.js 14 + TypeScript + Tailwind)
 - Design system foundation (color tokens, typography)
-- Basic UI components:
-  - `Button` (primary, secondary, outline, ghost variants + `asChild` composition)
-  - `Card` (hover effects, border opacity patterns)
-  - `Container` (max-width wrapper)
-  - `GradientText` (polymorphic gradient text component)
-- Landing page with hero, player tag form, and feature cards
-- Root layout with dark theme and Inter font
+- Core UI primitives & layout shell
+- Player onboarding, quiz, recommendation dashboard, deck guide, and history pages
+- Deterministic scoring engine wired to curated deck catalog
+- Clash Royale adapters with caching + mock fallbacks
+- Gemini integration with resilient fallback copy
+- Prisma schema, env validation helpers, Redis utilities, and stubbed Stripe checkout handler
 
 ### 🚧 In Progress
-- Clash Royale API integration (Route Handlers)
-- Database schema & Prisma setup
-- Scoring engine logic
-- Gemini prompt engineering
+- Account system (Auth.js/Clerk) and persisted user sessions
+- Production-ready Stripe subscriptions + webhook processing
+- Analytics, monitoring, and structured logging
+- Automated Prisma migrations + deck catalog seeding in CI
 
-### 📋 Planned (MVP)
-- Player tag input & validation
-- Playstyle quiz component
-- Deck recommendation UI
-- AI explainer panel
-- Copy/share functionality
-- Responsive mobile design
+### 📋 Planned (MVP Enhancements)
+- Copy/share deck interactions & telemetry
+- Aggregated feedback insights across sessions
+- Intelligent substitutions driven by live collection deltas
 
 ### 🚀 Post-MVP
-- User authentication (Auth.js/Clerk)
-- Recommendation history
-- Feedback system
-- Stripe Pro subscription
-- Flex deck slots
-- Card upgrade paths
+- Advanced recommendation history tied to authenticated users
+- Feedback loop with battle tracking and coaching follow-ups
+- Stripe Pro billing portal + plan management
+- Flex deck slots & upgrade path planning tools
 
 ---
 
@@ -291,7 +306,7 @@ When working on this repository:
 6. **Use `cn()` for all class merging** - from `lib/utils.ts`
 7. **Default to server components** - only use `"use client"` when needed
 8. **Implement proper error handling** - for all API calls and LLM interactions
-9. **Cache aggressively** - both external API data and LLM outputs (planned)
+9. **Cache aggressively** - external API data already cached; extend to Gemini outputs next
 10. **Prioritize accessibility** - WCAG AA is not optional
 
 For detailed information on:
@@ -303,5 +318,5 @@ For detailed information on:
 
 ---
 
-**Last Updated:** October 16, 2025  
-**Project Status:** Early development - scaffolding and design system complete, API integration in progress
+**Last Updated:** November 24, 2025
+**Project Status:** Core recommendation flow implemented; authentication, billing, and analytics pending

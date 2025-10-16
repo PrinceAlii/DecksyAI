@@ -9,7 +9,10 @@ Decksy AI is a Next.js 14 App Router application that provides Clash Royale play
 - **Frontend:** Next.js 14 (App Router), TypeScript (strict mode), Tailwind CSS
 - **UI Components:** Radix UI primitives + class-variance-authority for variants
 - **Design System:** Dark-first theme with custom color tokens (see `tailwind.config.ts`)
-- **Planned:** PostgreSQL (Supabase), Prisma ORM, Redis caching, Stripe, Auth.js/Clerk
+- **Backend:** Prisma ORM targeting PostgreSQL (automatically disabled when `DATABASE_URL` is missing)
+- **Caching:** Redis via `ioredis` (falls back to in-memory Map when `REDIS_URL` is missing)
+- **Integrations:** Clash Royale API adapters, Gemini explainers, Stripe checkout stub
+- **Planned:** Auth.js/Clerk, full Stripe subscription lifecycle, analytics/monitoring
 
 ### Import Aliases
 - Use `@/*` for all `src/*` imports (configured in `tsconfig.json`)
@@ -68,6 +71,16 @@ npm run build        # Production build
 npm run lint         # ESLint checks
 ```
 
+### Database & Cache Setup
+- Copy `.env.example` to `.env` and populate secrets.
+- Provide a Postgres connection string in `DATABASE_URL` (and `DIRECT_URL` if using Supabase connection pooling).
+- Generate the Prisma client with `npx prisma generate`.
+- Apply schema changes:
+  - Local dev: `npx prisma migrate dev --name init`
+  - Production/CI: `npx prisma migrate deploy`
+- Leaving `DATABASE_URL` empty keeps Prisma disabled and routes fall back to the in-memory recommendation store.
+- Set `REDIS_URL` (e.g., `redis://localhost:6379`). When omitted the cache helpers default to an in-memory Map.
+
 ### File Structure Conventions
 ```
 src/
@@ -100,15 +113,15 @@ MyComponent.displayName = "MyComponent";
 
 ## Security & Performance
 
-### API Integration (Planned)
+### API Integration
 - **Never expose API keys**: All external API calls (Clash Royale, Gemini) must be server-side
-- Use Next.js Route Handlers (`app/api/*/route.ts`) for API endpoints
-- Implement rate limiting on all public routes
-- Validate inputs with Zod schemas before API calls
+- Route handlers live under `app/api/*/route.ts`; keep request validation close to the handler
+- Implement rate limiting on public routes (TODO)
+- Validate inputs with Zod schemas before API calls (body schemas live beside each handler)
 
-### Caching Strategy (Planned)
+### Caching Strategy
 - Cache Clash Royale API responses (5-10 min TTL in Redis)
-- Cache Gemini outputs keyed by deck composition + player context
+- Cache Gemini outputs keyed by deck + player context (TODO)
 - Use React Server Components for static content
 
 ### Performance Best Practices
@@ -171,10 +184,10 @@ interface PlayerData {
 
 - **Full Requirements**: See `.github/Project_Spec.md` for detailed feature specs
 - **Design Details**: Refer to AGENTS.md sections on theme colors and typography
-- **API Design**: Check AGENTS.md Section on API Routes (implementation pending)
-- **Scoring Logic**: Detailed in project spec Section 7 (not yet implemented)
+- **API Design**: See AGENTS.md for the currently implemented route surface + remaining TODOs
+- **Scoring Logic**: Deterministic engine lives in `src/lib/scoring.ts` (spec Section 7 covers weighting rationale)
 
 ---
 
-**Last Updated:** October 16, 2025  
-**Project Status:** Early development - scaffolding and design system complete, API integration in progress
+**Last Updated:** November 24, 2025
+**Project Status:** Core recommendation loop shipped; auth, subscriptions, and analytics still pending
