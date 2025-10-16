@@ -24,7 +24,7 @@ async function persistRecommendation(
     trophyRange: `${payload.player.trophies}`,
     arena: payload.player.arena,
     playstyle: payload.quiz.preferredPace,
-    rationale: payload.quiz as Prisma.JsonObject,
+    rationale: payload.quiz as unknown as Prisma.JsonObject,
     scoreBreakdown: breakdown as Prisma.JsonArray,
     decks: explainers as Prisma.JsonArray,
   };
