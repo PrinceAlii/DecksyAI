@@ -289,6 +289,7 @@ npm run lint         # ESLint checks
 - **Full Project Spec:** See `Project_Spec.md` in this directory for detailed requirements
 - **GitHub Copilot Instructions:** See `copilot-instructions.md` for code patterns and workflows
 - **Clash Royale API:** https://developer.clashroyale.com/
+- **Clash Royale API (via proxy in this repo):** https://proxy.royaleapi.dev/ (this repo uses the royaleapi proxy — see `CLASH_ROYALE_API_PROXY` env var)
 - **Google Gemini API:** https://ai.google.dev/docs
 - **Design System:** All tokens defined in `tailwind.config.ts`
 - **Component Patterns:** Based on shadcn/ui + Radix UI primitives

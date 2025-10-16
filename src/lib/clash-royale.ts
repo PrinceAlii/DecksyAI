@@ -36,7 +36,8 @@ export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
   }
 
   const apiKey = process.env.CLASH_ROYALE_API_KEY;
-  const url = `https://api.clashroyale.com/v1/players/%23${encodeURIComponent(tag.replace("#", ""))}`;
+  const CLASH_API_BASE = process.env.CLASH_ROYALE_API_PROXY || "https://proxy.royaleapi.dev";
+  const url = `${CLASH_API_BASE}/v1/players/%23${encodeURIComponent(tag.replace("#", ""))}`;
 
   try {
     const response = await fetch(url, {
@@ -90,7 +91,8 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
   }
 
   const apiKey = process.env.CLASH_ROYALE_API_KEY;
-  const url = `https://api.clashroyale.com/v1/players/%23${encodeURIComponent(tag.replace("#", ""))}/battlelog`;
+  const CLASH_API_BASE = process.env.CLASH_ROYALE_API_PROXY || "https://proxy.royaleapi.dev";
+  const url = `${CLASH_API_BASE}/v1/players/%23${encodeURIComponent(tag.replace("#", ""))}/battlelog`;
 
   try {
     const response = await fetch(url, {
