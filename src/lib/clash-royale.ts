@@ -106,14 +106,59 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
       throw new Error(`Failed to fetch battles: ${response.status}`);
     }
 
-    const data = (await response.json()) as { opponent: { name: string }; battleTime: string; team: { cards: { key: string }[] }[]; opponentTeam: { cards: { key: string }[] }[]; battleResult: string }[];
+    const rawBattles = (await response.json()) as Array<{
+      battleTime: string;
+      teamCrowns?: number;
+      opponentCrowns?: number;
+      team?: Array<{
+        name?: string;
+        crowns?: number;
+        crownsEarned?: number;
+        cards?: Array<{ key?: string; name?: string }>;
+        deck?: Array<{ key?: string; name?: string }>;
+      }>;
+      opponent?: Array<{ name?: string; crowns?: number; crownsEarned?: number }>;
+      opponentTeam?: Array<{ name?: string; crowns?: number; crownsEarned?: number }>;
+    }>;
 
-    const battleLog: BattleLogEntry[] = data.slice(0, 5).map((match) => ({
-      opponent: match.opponent?.name ?? "Unknown",
-      result: (match.battleResult === "victory" ? "win" : match.battleResult === "defeat" ? "loss" : "draw") as "win" | "loss" | "draw",
-      deck: match.team?.[0]?.cards?.map((card) => card.key) ?? [],
-      timestamp: match.battleTime,
-    }));
+    const resolveDeck = (player?: {
+      cards?: Array<{ key?: string; name?: string }>;
+      deck?: Array<{ key?: string; name?: string }>;
+    }): string[] => {
+      if (!player) return [];
+      const sources = player.cards ?? player.deck ?? [];
+      return sources
+        .map((card) => card?.key || (card?.name ? card.name.toLowerCase().replace(/\s+/g, "_") : null))
+        .filter((key): key is string => Boolean(key));
+    };
+
+    const battleLog: BattleLogEntry[] = rawBattles.slice(0, 5).map((match) => {
+      const teamEntry = match.team?.[0];
+      const opponentEntry = match.opponent?.[0] ?? match.opponentTeam?.[0];
+
+      const teamCrowns =
+        typeof match.teamCrowns === "number"
+          ? match.teamCrowns
+          : teamEntry?.crowns ?? teamEntry?.crownsEarned ?? 0;
+      const opponentCrowns =
+        typeof match.opponentCrowns === "number"
+          ? match.opponentCrowns
+          : opponentEntry?.crowns ?? opponentEntry?.crownsEarned ?? 0;
+
+      let result: BattleLogEntry["result"] = "draw";
+      if (teamCrowns > opponentCrowns) {
+        result = "win";
+      } else if (teamCrowns < opponentCrowns) {
+        result = "loss";
+      }
+
+      return {
+        opponent: opponentEntry?.name ?? "Unknown",
+        result,
+        deck: resolveDeck(teamEntry),
+        timestamp: match.battleTime,
+      };
+    });
 
     await cacheSet(cacheKey, battleLog, 300);
     return battleLog;
