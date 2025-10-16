@@ -31,6 +31,10 @@ const serverEnvSchema = z.object({
   ),
   NEXTAUTH_SECRET: z.string().optional(),
   NEXTAUTH_URL: z.string().optional(),
+  AUTH_GITHUB_ID: z.string().optional(),
+  AUTH_GITHUB_SECRET: z.string().optional(),
+  RESEND_API_KEY: z.string().optional(),
+  EMAIL_FROM: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
 });
@@ -59,6 +63,10 @@ export function getServerEnv(): Env {
       REDIS_ALLOW_INSECURE_TLS: process.env.REDIS_ALLOW_INSECURE_TLS,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
       NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+      AUTH_GITHUB_ID: process.env.AUTH_GITHUB_ID,
+      AUTH_GITHUB_SECRET: process.env.AUTH_GITHUB_SECRET,
+      RESEND_API_KEY: process.env.RESEND_API_KEY,
+      EMAIL_FROM: process.env.EMAIL_FROM,
       NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
       SENTRY_DSN: process.env.SENTRY_DSN,
     });

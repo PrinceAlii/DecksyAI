@@ -3,13 +3,17 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Route } from "next";
 
+import { SignOutButton } from "@/components/features/auth/sign-out-button";
 import { PlayerOnboarding } from "@/components/features/player-onboarding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { GradientText } from "@/components/ui/gradient-text";
+import { getServerAuthSession } from "@/lib/auth";
 
-export default function HomePage() {
+export default async function HomePage() {
+  const session = await getServerAuthSession();
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="border-b border-border/60 bg-surface/60 backdrop-blur">
@@ -24,13 +28,28 @@ export default function HomePage() {
             />
             Decksy AI
           </Link>
-          <nav className="flex items-center gap-4 text-sm text-text-muted">
+          <nav className="flex items-center gap-3 text-sm text-text-muted">
             <Link href={"/account" as Route} className="transition hover:text-text">
               Account
             </Link>
-            <Button asChild variant="outline" size="sm">
-              <Link href={"/login" as Route}>Log in</Link>
-            </Button>
+            {session?.user ? (
+              <>
+                <span className="hidden text-xs text-text-muted sm:inline">
+                  {session.user.email ?? "Signed in"}
+                </span>
+                <SignOutButton
+                  variant="outline"
+                  size="sm"
+                  label="Sign out"
+                  redirectTo="/"
+                  className="text-xs"
+                />
+              </>
+            ) : (
+              <Button asChild variant="outline" size="sm">
+                <Link href={"/login" as Route}>Log in</Link>
+              </Button>
+            )}
           </nav>
         </Container>
       </header>

@@ -124,7 +124,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
         <Button variant="outline" className="gap-2" onClick={() => router.push("/history")}>View history</Button>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
+      <div className="grid gap-8 items-start lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
         <Card className="border-border bg-surface">
           <CardContent className="flex flex-col gap-6 p-6">
             <div className="flex flex-wrap gap-2">
@@ -169,7 +169,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
                   <div className="flex flex-col gap-3">
                     <h3 className="text-sm font-medium uppercase tracking-wide text-text-muted">Deck cards</h3>
-                    <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {activeDeck.deck.cards.map((card) => {
                         return <DeckCardTile key={card.key} card={card} />;
                       })}
@@ -223,7 +223,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-surface">
+        <Card className="border-border/60 bg-surface lg:sticky lg:top-8">
           <CardContent className="flex flex-col gap-6 p-6">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-text">Leave feedback</h3>

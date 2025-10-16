@@ -10,6 +10,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^1.1.0",
     "@google/generative-ai": "^0.11.0",
     "@prisma/client": "^6.17.1",
     "@radix-ui/react-slot": "^1.0.2",
@@ -19,6 +20,7 @@
     "ioredis": "^5.4.1",
     "lucide-react": "^0.449.0",
     "next": "14.2.5",
+    "next-auth": "^4.24.7",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "tailwind-merge": "^2.5.2",
