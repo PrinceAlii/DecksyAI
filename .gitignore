@@ -67,8 +67,3 @@ logs
 
 # Sentry
 .sentryclirc
-
-# GitHub (meta-instructions only)
-.github/*
-!.github/AGENTS.md
-!.github/Decksy_AI_Project_Spec.md
