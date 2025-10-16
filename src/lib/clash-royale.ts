@@ -106,9 +106,9 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
 
     const data = (await response.json()) as { opponent: { name: string }; battleTime: string; team: { cards: { key: string }[] }[]; opponentTeam: { cards: { key: string }[] }[]; battleResult: string }[];
 
-    const battleLog = data.slice(0, 5).map((match) => ({
+    const battleLog: BattleLogEntry[] = data.slice(0, 5).map((match) => ({
       opponent: match.opponent?.name ?? "Unknown",
-      result: match.battleResult === "victory" ? "win" : match.battleResult === "defeat" ? "loss" : "draw",
+      result: (match.battleResult === "victory" ? "win" : match.battleResult === "defeat" ? "loss" : "draw") as "win" | "loss" | "draw",
       deck: match.team?.[0]?.cards?.map((card) => card.key) ?? [],
       timestamp: match.battleTime,
     }));

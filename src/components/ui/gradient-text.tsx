@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-interface GradientTextProps extends React.HTMLAttributes<HTMLSpanElement> {
+interface GradientTextProps extends React.HTMLAttributes<HTMLElement> {
   as?: keyof JSX.IntrinsicElements;
 }
 
@@ -13,7 +13,7 @@ export function GradientText({ as: Component = "span", className, ...props }: Gr
         "bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent",
         className
       )}
-      {...props}
+      {...(props as any)}
     />
   );
 }

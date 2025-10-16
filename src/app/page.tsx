@@ -1,6 +1,7 @@
 import { ArrowRight, Sparkles, Trophy } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import type { Route } from "next";
 
 import { PlayerOnboarding } from "@/components/features/player-onboarding";
 import { Button } from "@/components/ui/button";
@@ -24,11 +25,11 @@ export default function HomePage() {
             Decksy AI
           </Link>
           <nav className="flex items-center gap-4 text-sm text-text-muted">
-            <Link href="/account" className="transition hover:text-text">
+            <Link href={"/account" as Route} className="transition hover:text-text">
               Account
             </Link>
             <Button asChild variant="outline" size="sm">
-              <Link href="/login">Log in</Link>
+              <Link href={"/login" as Route}>Log in</Link>
             </Button>
           </nav>
         </Container>
@@ -107,10 +108,10 @@ export default function HomePage() {
         <Container className="flex flex-col gap-4 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between">
           <p>&copy; {new Date().getFullYear()} Decksy AI. All rights reserved.</p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="transition hover:text-text">
+            <Link href={"/privacy" as Route} className="transition hover:text-text">
               Privacy
             </Link>
-            <Link href="/terms" className="transition hover:text-text">
+            <Link href={"/terms" as Route} className="transition hover:text-text">
               Terms
             </Link>
           </div>
