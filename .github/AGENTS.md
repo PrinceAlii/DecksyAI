@@ -251,6 +251,7 @@ SENTRY_DSN=
 - Deterministic scoring engine wired to curated deck catalog
 - Clash Royale adapters with caching + mock fallbacks
 - Gemini integration with resilient fallback copy
+- Gemini output caching with multi-model fallback to keep explainers resilient
 - Prisma schema, env validation helpers, Redis utilities, and stubbed Stripe checkout handler
 
 ### 🚧 In Progress
@@ -306,7 +307,7 @@ When working on this repository:
 6. **Use `cn()` for all class merging** - from `lib/utils.ts`
 7. **Default to server components** - only use `"use client"` when needed
 8. **Implement proper error handling** - for all API calls and LLM interactions
-9. **Cache aggressively** - external API data already cached; extend to Gemini outputs next
+9. **Cache aggressively** - external API data cached; Gemini explainers now cached by deck + player context with model fallback
 10. **Prioritize accessibility** - WCAG AA is not optional
 
 For detailed information on:

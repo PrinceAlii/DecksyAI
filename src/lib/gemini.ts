@@ -1,20 +1,15 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { z } from "zod";
 
-import { getServerEnv, isDevelopment } from "@/lib/env";
 import { DeckDefinition } from "@/lib/data/deck-catalog";
+import { getServerEnv, isDevelopment } from "@/lib/env";
+import { cacheGet, cacheSet } from "@/lib/redis";
 import { DeckScore, PlayerProfile } from "@/lib/scoring";
 
 interface GeminiExplainer {
   summary: string;
   substitutions: { card: string; suggestion: string }[];
   matchupTips: { archetype: string; tip: string }[];
-}
-
-function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): string {
-  return `You are Decksy AI. Explain why the deck ${deck.name} fits player ${player.name} (${player.trophies} trophies, arena ${player.arena}).` +
-    ` Cards: ${deck.cards.map((card) => card.name).join(", ")}.` +
-    ` Score breakdown: collection ${score.breakdown.collection}, trophies ${score.breakdown.trophies}, playstyle ${score.breakdown.playstyle}, difficulty ${score.breakdown.difficulty}.` +
-    ` Provide summary, up to 3 substitution suggestions, and matchup tips for common archetypes.`;
 }
 
 function fallbackExplainer(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): GeminiExplainer {
@@ -31,57 +26,146 @@ function fallbackExplainer(deck: DeckDefinition, score: DeckScore, player: Playe
   };
 }
 
+const DEFAULT_MODEL_CHAIN = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite"] as const;
+const CACHE_TTL_SECONDS = 60 * 60 * 6; // 6 hours
+
+const geminiExplainerSchema = z.object({
+  summary: z.string(),
+  substitutions: z
+    .array(z.object({ card: z.string(), suggestion: z.string() }))
+    .max(3)
+    .optional(),
+  matchupTips: z
+    .array(z.object({ archetype: z.string(), tip: z.string() }))
+    .max(3)
+    .optional(),
+});
+
+type GeminiExplainerPayload = z.infer<typeof geminiExplainerSchema>;
+
+function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): string {
+  const cardList = deck.cards.map((card) => card.name).join(", ");
+  return [
+    `You are Decksy AI, an assistant for Clash Royale players. Explain why the deck ${deck.name} fits player ${player.name} (${player.trophies} trophies, arena ${player.arena}).`,
+    `Cards: ${cardList}.`,
+    `Score breakdown: collection ${score.breakdown.collection}, trophies ${score.breakdown.trophies}, playstyle ${score.breakdown.playstyle}, difficulty ${score.breakdown.difficulty}.`,
+    "Respond strictly as compact JSON with shape {\"summary\": string, \"substitutions\": [{\"card\": string, \"suggestion\": string}], \"matchupTips\": [{\"archetype\": string, \"tip\": string}]}.",
+    "Limit substitutions and matchupTips to at most three items each and tailor them to the player's collection and archetype needs.",
+  ].join(" ");
+}
+
+function sanitisePlayerTag(tag: string): string {
+  const cleaned = tag.replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+  return cleaned.length > 0 ? cleaned : "unknown";
+}
+
+function buildCacheKey(
+  modelPreference: string,
+  deck: DeckDefinition,
+  score: DeckScore,
+  player: PlayerProfile,
+): string {
+  const signature = [
+    deck.slug,
+    sanitisePlayerTag(player.tag),
+    Math.round(score.breakdown.collection),
+    Math.round(score.breakdown.trophies),
+    Math.round(score.breakdown.playstyle),
+    Math.round(score.breakdown.difficulty),
+  ].join(":");
+
+  return `gemini:explainer:${modelPreference}:${signature}`;
+}
+
+function parseGeminiPayload(raw: string): GeminiExplainerPayload | null {
+  const cleaned = raw.replace(/```json|```/g, "").trim();
+
+  try {
+    const parsed = JSON.parse(cleaned);
+    const result = geminiExplainerSchema.safeParse(parsed);
+    return result.success ? result.data : null;
+  } catch (error) {
+    console.warn(`Failed to parse Gemini response as JSON: ${String(error)}`);
+    return null;
+  }
+}
+
+function normaliseExplainer(payload: GeminiExplainerPayload, fallback: GeminiExplainer): GeminiExplainer {
+  const summary = payload.summary?.trim();
+  const substitutions = (payload.substitutions ?? [])
+    .map((item) => ({ card: item.card.trim(), suggestion: item.suggestion.trim() }))
+    .filter((item) => item.card.length > 0 && item.suggestion.length > 0)
+    .slice(0, 3);
+  const matchupTips = (payload.matchupTips ?? [])
+    .map((item) => ({ archetype: item.archetype.trim(), tip: item.tip.trim() }))
+    .filter((item) => item.archetype.length > 0 && item.tip.length > 0)
+    .slice(0, 3);
+
+  return {
+    summary: summary && summary.length > 0 ? summary : fallback.summary,
+    substitutions: substitutions.length > 0 ? substitutions : fallback.substitutions,
+    matchupTips: matchupTips.length > 0 ? matchupTips : fallback.matchupTips,
+  };
+}
+
 export async function generateExplainer(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): Promise<GeminiExplainer> {
   const env = getServerEnv();
+  const fallback = fallbackExplainer(deck, score, player);
 
   if (!env.GEMINI_API_KEY) {
     if (isDevelopment()) {
       console.warn("GEMINI_API_KEY missing. Using fallback explainer.");
     }
-    return fallbackExplainer(deck, score, player);
+    return fallback;
   }
 
   const client = new GoogleGenerativeAI(env.GEMINI_API_KEY);
-  const model = client.getGenerativeModel({ model: "gemini-1.5-flash" });
+  const preferredModel = env.GEMINI_MODEL?.trim();
+  const cacheKey = buildCacheKey(preferredModel ?? "auto", deck, score, player);
+  const cached = await cacheGet<GeminiExplainer>(cacheKey);
 
-  try {
-    const prompt = buildPrompt(deck, score, player);
-    const response = await model.generateContent({ contents: [{ role: "user", parts: [{ text: prompt }] }] });
-    const text = response.response.text();
-
-    if (!text) {
-      throw new Error("Gemini returned empty response");
-    }
-
-    const lines = text
-      .split("\n")
-      .map((line) => line.trim())
-      .filter((line) => line.length > 0 && !line.startsWith("#"));
-
-    const summary = lines[0] ?? `Play ${deck.name} with confidence.`;
-    const substitutions = lines
-      .filter((line) => line.toLowerCase().includes("substitute"))
-      .slice(0, 3)
-      .map((line) => ({
-        card: deck.cards.find((card) => line.toLowerCase().includes(card.name.toLowerCase()))?.name ?? deck.cards[0].name,
-        suggestion: line,
-      }));
-
-    const matchupTips = lines
-      .filter((line) => line.toLowerCase().includes("matchup") || line.toLowerCase().includes("against"))
-      .slice(0, 3)
-      .map((line) => ({
-        archetype: line.split(":")[0] ?? "General",
-        tip: line,
-      }));
-
-    return {
-      summary,
-      substitutions: substitutions.length > 0 ? substitutions : fallbackExplainer(deck, score, player).substitutions,
-      matchupTips: matchupTips.length > 0 ? matchupTips : fallbackExplainer(deck, score, player).matchupTips,
-    };
-  } catch (error) {
-    console.warn(`Gemini request failed. Falling back. Reason: ${String(error)}`);
-    return fallbackExplainer(deck, score, player);
+  if (cached) {
+    return cached;
   }
+
+  const candidateModels = Array.from(
+    new Set(
+      [preferredModel, ...DEFAULT_MODEL_CHAIN].filter(
+        (model): model is string => typeof model === "string" && model.length > 0,
+      ),
+    ),
+  );
+
+  const prompt = buildPrompt(deck, score, player);
+
+  for (const modelId of candidateModels) {
+    try {
+      const model = client.getGenerativeModel({ model: modelId });
+      const response = await model.generateContent({
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "application/json" },
+      });
+
+      const text = response.response.text();
+
+      if (!text) {
+        throw new Error("Gemini returned empty response");
+      }
+
+      const payload = parseGeminiPayload(text);
+
+      if (!payload) {
+        throw new Error("Gemini response not in expected JSON format");
+      }
+
+      const explainer = normaliseExplainer(payload, fallback);
+      await cacheSet(cacheKey, explainer, CACHE_TTL_SECONDS);
+      return explainer;
+    } catch (error) {
+      console.warn(`[Gemini] Model ${modelId} failed. Falling back. Reason: ${String(error)}`);
+    }
+  }
+
+  console.warn("Gemini request failed after trying all models. Using fallback explainer.");
+  return fallback;
 }
