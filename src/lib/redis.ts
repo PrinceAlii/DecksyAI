@@ -18,11 +18,34 @@ export function getRedis(): Redis | null {
     return null;
   }
 
-  client = new Redis(REDIS_URL, {
+  // Opt-in TLS behavior: only disable certificate verification when the
+  // env var REDIS_TLS_ALLOW_SELF_SIGNED is set to true and the URL uses TLS.
+  const { REDIS_TLS_ALLOW_SELF_SIGNED, REDIS_ALLOW_INSECURE_TLS } = getServerEnv();
+  const isTls = REDIS_URL.startsWith("rediss://");
+
+  const redisOptions: Record<string, unknown> = {
     maxRetriesPerRequest: 1,
     enableReadyCheck: false,
     lazyConnect: true,
-  });
+  };
+
+  // Accept either env var as an alias for the opt-in behavior. For local
+  // development, enable the insecure TLS fallback automatically so the
+  // developer doesn't have to modify their `.env`. In non-development
+  // environments this must be explicitly set via environment variables.
+  const allowInsecure = Boolean(
+    REDIS_TLS_ALLOW_SELF_SIGNED || REDIS_ALLOW_INSECURE_TLS || isDevelopment()
+  );
+
+  if (isTls && allowInsecure) {
+    // Note: disabling rejectUnauthorized weakens TLS verification. Use only
+    // when you understand the security implications (e.g., quick Heroku
+    // workaround). Prefer providing a proper CA when possible.
+    // ioredis types are a bit loose here; cast to any to avoid TS complaints.
+    (redisOptions as any).tls = { rejectUnauthorized: false };
+  }
+
+  client = new Redis(REDIS_URL, redisOptions as any);
 
   return client;
 }
