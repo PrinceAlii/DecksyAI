@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { DeckDefinition } from "@/lib/data/deck-catalog";
+import { DeckCard, DeckDefinition } from "@/lib/data/deck-catalog";
 
 interface Explainer {
   summary: string;
@@ -36,6 +36,54 @@ interface RecommendationResultsProps {
   playerTag: string;
   trophyInfo: string;
   results: RecommendationDeckResult[];
+}
+
+const CARD_IMAGE_BASE_URL = "https://royaleapi.github.io/cr-api-assets/cards-150/";
+
+const CARD_IMAGE_OVERRIDES: Record<string, string> = {
+  log: "the-log",
+  snowball: "giant-snowball",
+};
+
+function getCardImageSrc(card: DeckCard) {
+  if (card.image) {
+    return card.image;
+  }
+
+  const key = CARD_IMAGE_OVERRIDES[card.key] ?? card.key.replace(/_/g, "-");
+  return `${CARD_IMAGE_BASE_URL}${key}.png`;
+}
+
+function DeckCardTile({ card }: { card: DeckCard }) {
+  const [hasError, setHasError] = useState(false);
+  const imageSrc = hasError ? "/cards/placeholder.svg" : getCardImageSrc(card);
+
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center transition hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
+      <div
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/60 bg-surface"
+        style={{ backgroundImage: "url(/cards/placeholder.svg)" }}
+      >
+        <Image
+          src={imageSrc}
+          alt={card.name}
+          fill
+          sizes="(max-width: 640px) 40vw, (max-width: 1024px) 20vw, 160px"
+          className="object-cover"
+          unoptimized
+          onError={() => {
+            if (!hasError) {
+              setHasError(true);
+            }
+          }}
+        />
+      </div>
+      <div className="space-y-1">
+        <p className="text-sm font-medium text-text">{card.name}</p>
+        <p className="text-xs text-text-muted">Lvl {card.levelRequirement}</p>
+      </div>
+    </div>
+  );
 }
 
 export function RecommendationResults({ sessionId, playerTag, trophyInfo, results }: RecommendationResultsProps) {
@@ -76,8 +124,8 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
         <Button variant="outline" className="gap-2" onClick={() => router.push("/history")}>View history</Button>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card className="border-border/60 bg-surface">
+      <div className="grid gap-8 items-start lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+        <Card className="border-border bg-surface">
           <CardContent className="flex flex-col gap-6 p-6">
             <div className="flex flex-wrap gap-2">
               {results.map((result) => (
@@ -95,13 +143,13 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
             {activeDeck && (
               <div className="flex flex-col gap-6">
-                <section className="flex flex-col gap-6 rounded-xl border border-border/60 bg-surface-muted/40 p-6">
+                <section className="flex flex-col gap-6 rounded-xl border border-border/80 bg-surface-muted/40 p-6 shadow-[0_8px_32px_rgba(10,15,25,0.35)]">
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="space-y-2">
                       <h2 className="text-2xl font-semibold text-text">{activeDeck.deck.name}</h2>
                       <p className="text-sm text-text-muted">{activeDeck.deck.description}</p>
                     </div>
-                    <div className="flex items-center gap-3 rounded-lg border border-border/60 bg-background/80 px-4 py-3 text-right">
+                    <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-background/80 px-4 py-3 text-right shadow-inner">
                       <span className="text-sm text-text-muted">Average elixir</span>
                       <span className="text-2xl font-semibold text-accent">{activeDeck.deck.averageElixir.toFixed(1)}</span>
                     </div>
@@ -111,7 +159,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
                     {Object.entries(activeDeck.breakdown).map(([key, value]) => (
                       <div
                         key={key}
-                        className="flex items-center justify-between rounded-lg border border-border/60 bg-background/80 px-4 py-3"
+                        className="flex items-center justify-between rounded-lg border border-border/70 bg-background/80 px-4 py-3 shadow-sm"
                       >
                         <span className="text-sm capitalize text-text-muted">{key}</span>
                         <span className="text-lg font-semibold text-text">{value}</span>
@@ -121,33 +169,9 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
                   <div className="flex flex-col gap-3">
                     <h3 className="text-sm font-medium uppercase tracking-wide text-text-muted">Deck cards</h3>
-                    <div className="grid gap-3 sm:grid-cols-4">
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
                       {activeDeck.deck.cards.map((card) => {
-                        const imageSrc = card.image ?? `https://royaleapi.github.io/static/img/cards-150/${card.key}.png`;
-                        return (
-                          <div
-                            key={card.key}
-                            className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center"
-                          >
-                            <div
-                              className="relative aspect-[3/4] w-full overflow-hidden rounded-md bg-surface bg-cover bg-center"
-                              style={{ backgroundImage: "url(/cards/placeholder.svg)" }}
-                            >
-                              <Image
-                                src={imageSrc}
-                                alt={card.name}
-                                fill
-                                sizes="(max-width: 640px) 33vw, 160px"
-                                className="object-cover"
-                                unoptimized
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <p className="text-sm font-medium text-text">{card.name}</p>
-                              <p className="text-xs text-text-muted">Lvl {card.levelRequirement}</p>
-                            </div>
-                          </div>
-                        );
+                        return <DeckCardTile key={card.key} card={card} />;
                       })}
                     </div>
                   </div>
@@ -199,7 +223,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
           </CardContent>
         </Card>
 
-        <Card className="border-border/60 bg-surface">
+        <Card className="border-border/60 bg-surface lg:sticky lg:top-8">
           <CardContent className="flex flex-col gap-6 p-6">
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-text">Leave feedback</h3>
