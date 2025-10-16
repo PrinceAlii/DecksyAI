@@ -58,7 +58,9 @@ function createAuthOptions(): NextAuthOptions {
   }
 
   const env = getServerEnv();
-  const providers = [createEmailProvider(env)];
+  const providers: Array<ReturnType<typeof createEmailProvider> | ReturnType<typeof GithubProvider>> = [
+    createEmailProvider(env),
+  ];
 
   if (env.AUTH_GITHUB_ID && env.AUTH_GITHUB_SECRET) {
     providers.push(
