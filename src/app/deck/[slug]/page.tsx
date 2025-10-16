@@ -1,0 +1,147 @@
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft, ListChecks } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Container } from "@/components/ui/container";
+import { Badge } from "@/components/ui/badge";
+import { getDeckBySlug } from "@/lib/data/deck-catalog";
+
+interface ExplainerRecord {
+  deck: {
+    name: string;
+    description: string;
+    averageElixir: number;
+    cards: { name: string; key: string; levelRequirement: number }[];
+    strengths: string[];
+    weaknesses: string[];
+  };
+  explainers?: {
+    summary: string;
+    substitutions: { card: string; suggestion: string }[];
+    matchupTips: { archetype: string; tip: string }[];
+  }[];
+}
+
+async function fetchExplainer(slug: string, sessionId?: string) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ? `${process.env.NEXT_PUBLIC_BASE_URL}` : "";
+  const response = await fetch(`${baseUrl}/api/coach?deck=${slug}${sessionId ? `&sessionId=${sessionId}` : ""}`, {
+    cache: "no-store",
+    next: { revalidate: 0 },
+  });
+
+  if (!response.ok) {
+    return null;
+  }
+
+  return (await response.json()) as ExplainerRecord;
+}
+
+export default async function DeckPage({
+  params,
+  searchParams,
+}: {
+  params: { slug: string };
+  searchParams: { sessionId?: string };
+}) {
+  const deck = getDeckBySlug(params.slug);
+
+  if (!deck) {
+    notFound();
+  }
+
+  const data = await fetchExplainer(deck.slug, searchParams.sessionId);
+  const explainer = data?.explainers?.[0];
+
+  return (
+    <div className="bg-background py-16">
+      <Container className="space-y-10">
+        <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
+          <Link href="/recommend">
+            <ArrowLeft className="size-4" />
+            Back to recommendations
+          </Link>
+        </Button>
+
+        <Card className="border-border/60 bg-surface">
+          <CardContent className="grid gap-6 p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl font-semibold text-text">{deck.name}</h1>
+                <p className="text-sm text-text-muted">{deck.description}</p>
+              </div>
+              <Badge variant="secondary" className="text-base">
+                {deck.averageElixir.toFixed(1)} elixir
+              </Badge>
+            </div>
+
+            <div className="grid gap-3 md:grid-cols-2">
+              {deck.cards.map((card) => (
+                <div
+                  key={card.key}
+                  className="flex items-center justify-between rounded-lg border border-border/60 bg-surface-muted/40 px-4 py-3"
+                >
+                  <span className="text-sm font-medium text-text">{card.name}</span>
+                  <span className="text-xs text-text-muted">Lvl {card.levelRequirement}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid gap-6 md:grid-cols-2">
+              <div>
+                <h2 className="text-lg font-semibold text-text">Strengths</h2>
+                <ul className="mt-2 space-y-2 text-sm text-text-muted">
+                  {deck.strengths.map((strength) => (
+                    <li key={strength} className="flex items-start gap-2">
+                      <ListChecks className="mt-0.5 size-4 text-accent" />
+                      <span>{strength}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-text">Watch outs</h2>
+                <ul className="mt-2 space-y-2 text-sm text-text-muted">
+                  {deck.weaknesses.map((weakness) => (
+                    <li key={weakness} className="flex items-start gap-2">
+                      <ListChecks className="mt-0.5 size-4 text-warning" />
+                      <span>{weakness}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {explainer && (
+          <Card className="border-border/60 bg-surface">
+            <CardContent className="space-y-4 p-6">
+              <h2 className="text-xl font-semibold text-text">Gemini coach notes</h2>
+              <p className="text-sm text-text-muted">{explainer.summary}</p>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <h3 className="text-sm font-medium text-text">Substitutions</h3>
+                  <ul className="mt-2 space-y-2 text-sm text-text-muted">
+                    {explainer.substitutions.map((sub) => (
+                      <li key={`${sub.card}-${sub.suggestion}`}>{sub.card}: {sub.suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="text-sm font-medium text-text">Matchups</h3>
+                  <ul className="mt-2 space-y-2 text-sm text-text-muted">
+                    {explainer.matchupTips.map((tip) => (
+                      <li key={`${tip.archetype}-${tip.tip}`}>{tip.tip}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </Container>
+    </div>
+  );
+}

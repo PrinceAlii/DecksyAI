@@ -2,6 +2,7 @@ import { ArrowRight, Sparkles, Trophy } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
+import { PlayerOnboarding } from "@/components/features/player-onboarding";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
@@ -65,36 +66,7 @@ export default function HomePage() {
 
         <section id="get-started" className="py-20">
           <Container className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-            <Card className="border-border/60 bg-surface p-8">
-              <CardContent className="space-y-6 p-0">
-                <div>
-                  <h2 className="text-2xl font-semibold text-text">Start with your player tag</h2>
-                  <p className="mt-2 text-text-muted">
-                    Securely connect via the Clash Royale API. We fetch your cards and battle history to
-                    build a profile in seconds.
-                  </p>
-                </div>
-                <form className="space-y-4" aria-label="Player tag">
-                  <label className="block text-sm font-medium text-text-muted" htmlFor="tag">
-                    Player Tag
-                  </label>
-                  <input
-                    id="tag"
-                    name="tag"
-                    placeholder="#ABC123"
-                    className="w-full rounded-lg border border-border/70 bg-surface-muted/60 px-4 py-3 text-base text-text placeholder:text-text-muted focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/40"
-                  />
-                  <Button type="submit" className="w-full justify-center gap-2">
-                    Fetch my data
-                    <Sparkles className="size-4" />
-                  </Button>
-                </form>
-                <p className="text-xs text-text-muted">
-                  We never store your tag without permission. Rate limited &amp; secured with server-side
-                  API keys.
-                </p>
-              </CardContent>
-            </Card>
+            <PlayerOnboarding />
 
             <div className="grid gap-6">
               <Card className="border-border/60 bg-surface p-6">
