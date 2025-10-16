@@ -103,9 +103,9 @@ I --> J[Feedback after 10 battles]
 
 ## 5) Data Model & Storage
 
-- **User, Profile, DeckCatalog, Recommendation, Explainer, Feedback, Billing, AuditLog**
-- Use **Postgres + Prisma**
-- Cache API responses and LLM outputs in Redis
+- **User, Profile, DeckCatalog, Recommendation, Explainer, Feedback, Billing, AuditLog** (see `prisma/schema.prisma`)
+- Use **Postgres + Prisma** (Prisma client initialises only when `DATABASE_URL` is provided; otherwise the app falls back to in-memory stores)
+- Cache API responses and LLM outputs in Redis (falls back to in-memory Map when `REDIS_URL` is absent)
 
 ---
 
@@ -139,7 +139,9 @@ Define schema-based JSON responses with explainer, substitutions, and matchup ti
 - `/api/recommend`
 - `/api/coach`
 - `/api/feedback`
-- `/api/stripe/*`
+- `/api/history`
+- `/api/stripe/checkout`
+- `/api/stripe/*` (webhooks – pending)
 
 ---
 
@@ -177,3 +179,9 @@ Epics:
 - Stripe Pro, history, flex slots, upgrade paths
 
 ---
+
+## 14) Operational Notes
+
+- **Environment template:** Duplicate `.env.example` to `.env` and fill in credentials. `DATABASE_URL`/`DIRECT_URL` should point at your Postgres instance; `REDIS_URL` can be `redis://localhost:6379` for local dev or your Upstash endpoint in production.
+- **Prisma workflow:** After installing dependencies, run `npx prisma generate`. Apply schema changes with `npx prisma migrate dev --name init` locally or `npx prisma migrate deploy` in CI/production. Without `DATABASE_URL`, Prisma is skipped and the app writes to the in-memory recommendation store.
+- **Redis fallback:** If `REDIS_URL` is unset the caching layer automatically uses a transient in-memory Map, which is acceptable for local testing but not for production.
