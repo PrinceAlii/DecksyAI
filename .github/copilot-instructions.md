@@ -1,3 +1,30 @@
+# Copilot Instructions for Decksy AI (Combined)
+
+This file is a copy of the merged `.github` documentation and contains Copilot-specific guidance, coding patterns, and project conventions.
+
+## Overview
+
+Decksy AI is a Next.js 14 App Router application that provides Clash Royale players with personalized deck recommendations powered by AI. The app analyzes player data via the Clash Royale API, scores decks using a rules-based engine, and generates coaching insights with Google Gemini.
+
+### Key points
+- Use `@/*` imports (configured via `tsconfig.json`).
+- UI primitives live in `src/components/ui/` and use `React.forwardRef`.
+- Use `cva` (class-variance-authority) for component variants and export variant types.
+- Use a `cn()` helper for Tailwind class composition (avoid manual string concat).
+- Keep LLM/third-party API keys server-side and behind route handlers.
+
+For full project guidance, see `.github/AGENTS.md` and `Project_Spec.md`.
+
+**Last updated:** November 24, 2025
+# Copilot Instructions for Decksy AI
+
+## Project Overview
+Decksy AI is a Next.js 14 App Router application that provides Clash Royale players with personalized deck recommendations powered by AI. The app analyzes player data via the Clash Royale API, scores decks using a rules-based engine, and generates coaching insights with Google Gemini.
+
+## Architecture & Key Patterns
+
+### Tech Stack
+````instructions
 # Copilot Instructions for Decksy AI
 
 ## Project Overview
@@ -192,7 +219,7 @@ interface PlayerData {
 
 ## Questions or Clarifications
 
-- **Full Requirements**: See `.github/Project_Spec.md` for detailed feature specs
+- **Full Requirements**: See `.github/AGENTS.md` for detailed feature specs
 - **Design Details**: Refer to AGENTS.md sections on theme colors and typography
 - **API Design**: See AGENTS.md for the currently implemented route surface + remaining TODOs
 - **Scoring Logic**: Deterministic engine lives in `src/lib/scoring.ts` (spec Section 7 covers weighting rationale)
@@ -201,3 +228,5 @@ interface PlayerData {
 
 **Last Updated:** November 24, 2025
 **Project Status:** Core recommendation loop shipped; auth and analytics still pending
+
+````
