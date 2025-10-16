@@ -43,14 +43,19 @@ const geminiExplainerSchema = z.object({
 
 type GeminiExplainerPayload = z.infer<typeof geminiExplainerSchema>;
 
-function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): string {
+export function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): string {
   const cardList = deck.cards.map((card) => card.name).join(", ");
+  const trophyText = typeof player.trophies === "number" ? `${player.trophies} trophies` : "unknown trophy count";
+  const arenaText = player.arena ? `Arena ${player.arena}` : "an unknown arena";
+
   return [
-    `You are Decksy AI, an assistant for Clash Royale players. Explain why the deck ${deck.name} fits player ${player.name} (${player.trophies} trophies, arena ${player.arena}).`,
-    `Cards: ${cardList}.`,
-    `Score breakdown: collection ${score.breakdown.collection}, trophies ${score.breakdown.trophies}, playstyle ${score.breakdown.playstyle}, difficulty ${score.breakdown.difficulty}.`,
-    "Respond strictly as compact JSON with shape {\"summary\": string, \"substitutions\": [{\"card\": string, \"suggestion\": string}], \"matchupTips\": [{\"archetype\": string, \"tip\": string}]}.",
-    "Limit substitutions and matchupTips to at most three items each and tailor them to the player's collection and archetype needs.",
+    "You are Decksy AI, an expert Clash Royale strategy assistant.",
+    `Explain why the deck ${deck.name} matches this player who is at ${trophyText} in ${arenaText}. Focus on skill fit, collection readiness, and tempo guidance without mentioning any player names or tags.`,
+    `Deck cards: ${cardList}.`,
+    `Score breakdown (0-100): collection ${score.breakdown.collection}, trophies ${score.breakdown.trophies}, playstyle ${score.breakdown.playstyle}, difficulty ${score.breakdown.difficulty}.`,
+    "Tone requirements: confident, encouraging, and tactical. Open with the key win condition, then provide actionable sequencing tips and matchup posture.",
+    "Format the summary as two short paragraphs separated by a blank line. Keep sentences tight and avoid fluff.",
+    "Respond strictly as compact JSON with shape {\"summary\": string, \"substitutions\": [{\"card\": string, \"suggestion\": string}], \"matchupTips\": [{\"archetype\": string, \"tip\": string}]}. Omit fields that would be empty and keep each list to at most three items tailored to the player's collection gaps.",
   ].join(" ");
 }
 
@@ -77,7 +82,7 @@ function buildCacheKey(
   return `gemini:explainer:${modelPreference}:${signature}`;
 }
 
-function parseGeminiPayload(raw: string): GeminiExplainerPayload | null {
+export function parseGeminiPayload(raw: string): GeminiExplainerPayload | null {
   const cleaned = raw.replace(/```json|```/g, "").trim();
 
   try {

@@ -1,20 +1,14 @@
 # Decksy AI Delivery Plan (Update)
 
 ## Recently Completed
-- Hardened Gemini explainer pipeline with JSON responses, multi-model fallback (`gemini-2.5-flash` → `gemini-2.0-flash-lite`) and Redis-backed caching so users stop seeing "model not found" errors.
-- Captured the latest Gemini API model matrix to keep integration choices in sync with Google's published availability.
+- Removed premium references and Stripe dependencies from the product, backend, and developer docs so the experience reflects a free tier only.
+- Shipped illustrated card grids on recommendation and deck detail views, including responsive spacing fixes to match the reported layout gaps.
+- Refined the Gemini explainer prompt to avoid personal names, enforce tone/structure guidance, and added Vitest coverage for the prompt parser/builder.
+- Addressed Next.js build warnings by simplifying fetch caching directives and refreshed internal guidance across `.github/` docs.
 
 ## In Flight / Next Up
-1. **Structured prompt refinements** – introduce Zod schema validation on the client response objects shared with the UI, and add regression tests around the JSON parsing helper.
-2. **Player context enrichment** – incorporate collection deltas into the Gemini prompt so substitutions reflect missing cards, then persist explainer payloads for history replay once the database is live.
-3. **Observability** – pipe Gemini call metadata (model used, latency, cache hits) into the planned analytics/monitoring stack (PostHog + Sentry) to spot degradation quickly.
-4. **Feature polish** – surface "last updated" timestamps for explainers in the dashboard and expose model selection in admin settings for rapid experiments.
-
-## Risks & Mitigations
-- **Model churn**: Keep the fallback chain updated and schedule a weekly check against the models endpoint; alert when preferred model returns non-200 responses.
-- **Prompt drift**: Log anonymized prompts/responses behind a feature flag so we can tune wording without spamming the live API.
-
-## Milestones
-- **Week 1**: Ship observability hooks + admin model toggle.
-- **Week 2**: Persist explainer payloads with Prisma + surface history replay.
-- **Week 3**: Bundle structured prompt tests into CI and gate releases on them.
+1. **Card art sourcing:** Download and optimise official Clash Royale card imagery (document licensing) to replace the temporary RoyaleAPI links and ensure offline availability.
+2. **UI QA sweep:** Capture responsive screenshots of the updated deck recommendation and detail layouts and validate accessibility (focus order, colour contrast) after the spacing overhaul.
+3. **Security follow-up:** Resolve the `npm audit` critical vulnerability and document the remediation path so production deploys are unblocked.
+4. **Prompt regression coverage:** Extend Vitest coverage to the Gemini fallback explainer and cache key helpers to guard against future refactors.
+5. **History polish:** Introduce deck imagery to the history list and consider surfacing quick links for recently viewed decks once the asset pipeline is ready.

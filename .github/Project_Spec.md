@@ -11,8 +11,7 @@
 - **Design:** Dark theme (sleek, modern, minimal), accessible
 - **Data sources:** Clash Royale API (player, cards, battles), internal deck catalog (JSON/DB)
 - **AI:** Google Gemini API (text generation + JSON output)
-- **MVP:** Player imports tag → quick playstyle quiz → top 1–3 recommended decks → explainer & substitutions → copy/share → optional Pro features (Stripe)
-- **Monetization:** Freemium + subscription (Pro)
+- **MVP:** Player imports tag → quick playstyle quiz → top 1–3 recommended decks → explainer & substitutions → copy/share experience
 
 ---
 
@@ -34,7 +33,6 @@ Decksy AI recommends **personalized decks** that align with your **collection, t
 - Time on guide page & copy-deck clicks
 - Feedback rating on recommended deck (thumbs up/down)
 - Retention (repeat sessions/week)
-- Pro conversion rate
 
 ---
 
@@ -78,7 +76,7 @@ Decksy AI recommends **personalized decks** that align with your **collection, t
 - **/recommend:** Results (top 1–3 decks), score breakdown, copy/share
 - **/deck/[slug]:** Detailed guide (explainer, subs, matchup notes)
 - **/history:** Your past recommendations & feedback
-- **/account:** Plan, billing (Pro), API connections, profile
+- **/account:** Future profile & settings surface
 - **/login:** Auth
 - **/privacy, /terms:** Legal
 
@@ -103,7 +101,7 @@ I --> J[Feedback after 10 battles]
 
 ## 5) Data Model & Storage
 
-- **User, Profile, DeckCatalog, Recommendation, Explainer, Feedback, Billing, AuditLog** (see `prisma/schema.prisma`)
+- **User, Profile, DeckCatalog, Recommendation, Explainer, Feedback, AuditLog** (see `prisma/schema.prisma`)
 - Use **Postgres + Prisma** (Prisma client initialises only when `DATABASE_URL` is provided; otherwise the app falls back to in-memory stores)
 - Cache API responses and LLM outputs in Redis (falls back to in-memory Map when `REDIS_URL` is absent)
 
@@ -113,7 +111,6 @@ I --> J[Feedback after 10 battles]
 
 - Clash Royale API (server-only)
 - Gemini API (JSON schema, text generation)
-- Stripe (subscription)
 - Auth.js or Clerk (authentication)
 - PostHog (analytics)
 - Sentry (monitoring)
@@ -140,8 +137,6 @@ Define schema-based JSON responses with explainer, substitutions, and matchup ti
 - `/api/coach`
 - `/api/feedback`
 - `/api/history`
-- `/api/stripe/checkout`
-- `/api/stripe/*` (webhooks – pending)
 
 ---
 
@@ -165,8 +160,7 @@ Epics:
 3. Data Layer (DB, cache)
 4. Core Features (tag flow, quiz, scoring, coach, results UI)
 5. Feedback & History
-6. Pro & Payments
-7. Analytics & QA
+6. Analytics & QA
 
 ---
 
@@ -176,7 +170,7 @@ Epics:
 - Player tag, quiz, scoring, LLM explainers, dark UI
 
 **v1.1+:**
-- Stripe Pro, history, flex slots, upgrade paths
+- Enhanced history insights, flex deck slots, guided onboarding refinements
 
 ---
 

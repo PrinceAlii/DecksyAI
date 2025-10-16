@@ -29,8 +29,6 @@ const serverEnvSchema = z.object({
     },
     z.boolean().optional()
   ),
-  STRIPE_SECRET_KEY: z.string().optional(),
-  STRIPE_WEBHOOK_SECRET: z.string().optional(),
   NEXTAUTH_SECRET: z.string().optional(),
   NEXTAUTH_URL: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
@@ -59,8 +57,6 @@ export function getServerEnv(): Env {
       REDIS_URL: process.env.REDIS_URL || herokuRedis,
       REDIS_TLS_ALLOW_SELF_SIGNED: process.env.REDIS_TLS_ALLOW_SELF_SIGNED,
       REDIS_ALLOW_INSECURE_TLS: process.env.REDIS_ALLOW_INSECURE_TLS,
-      STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
       NEXTAUTH_URL: process.env.NEXTAUTH_URL,
       NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,

@@ -29,7 +29,6 @@
 ### Integrations (Planned)
 - **Clash Royale API:** Player data, cards, battles (server-only)
 - **Google Gemini API:** AI explanations, substitutions, matchup advice (JSON schema mode)
-- **Stripe:** Subscription payments (Pro tier)
 - **Auth:** Auth.js or Clerk
 - **Analytics:** PostHog
 - **Monitoring:** Sentry
@@ -106,7 +105,7 @@ public/                 # Static assets
    - Matchup tips and coaching notes
    - Win condition strategies
 7. **Actions:** Copy deck link, share, save to history (post-auth)
-8. **Feedback Loop:** Collect win/loss data after 10 battles (Pro tier)
+8. **Feedback Loop:** Collect win/loss data after 10 battles to improve coaching
 
 ### Implemented API Routes
 - `GET /api/player/:tag` – Clash Royale profile fetch with Redis caching and mock fallback
@@ -115,9 +114,7 @@ public/                 # Static assets
 - `POST /api/coach` – Gemini-powered coaching explainer stub
 - `POST /api/feedback` – Persists feedback (Prisma) or stores in-memory when DB absent
 - `GET /api/history` – Lists recent recommendation sessions
-- `POST /api/stripe/checkout` – Stripe checkout stub for Pro upsell experiments
 
-Additional planned endpoints (`/api/stripe/*` webhooks, auth callbacks) remain TODO.
 
 ---
 
@@ -209,10 +206,6 @@ DIRECT_URL=
 # Redis
 REDIS_URL=
 
-# Stripe
-STRIPE_SECRET_KEY=
-STRIPE_WEBHOOK_SECRET=
-
 # Auth
 NEXTAUTH_SECRET=
 NEXTAUTH_URL=
@@ -252,11 +245,10 @@ SENTRY_DSN=
 - Clash Royale adapters with caching + mock fallbacks
 - Gemini integration with resilient fallback copy
 - Gemini output caching with multi-model fallback to keep explainers resilient
-- Prisma schema, env validation helpers, Redis utilities, and stubbed Stripe checkout handler
+- Prisma schema, env validation helpers, and Redis utilities
 
 ### 🚧 In Progress
 - Account system (Auth.js/Clerk) and persisted user sessions
-- Production-ready Stripe subscriptions + webhook processing
 - Analytics, monitoring, and structured logging
 - Automated Prisma migrations + deck catalog seeding in CI
 
@@ -268,7 +260,6 @@ SENTRY_DSN=
 ### 🚀 Post-MVP
 - Advanced recommendation history tied to authenticated users
 - Feedback loop with battle tracking and coaching follow-ups
-- Stripe Pro billing portal + plan management
 - Flex deck slots & upgrade path planning tools
 
 ---
@@ -321,4 +312,4 @@ For detailed information on:
 ---
 
 **Last Updated:** November 24, 2025
-**Project Status:** Core recommendation flow implemented; authentication, billing, and analytics pending
+**Project Status:** Core recommendation flow implemented; authentication and analytics pending
