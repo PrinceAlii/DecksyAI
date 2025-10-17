@@ -27,6 +27,12 @@ Refer to the individual files for single-topic views; this combined document is 
 
 ---
 
+### Recent implementation notes (October 2025)
+
+- The shared `RecommendationResults` component now accepts an optional `showHistoryNavigation` flag so it can embed cleanly inside history detail views without duplicating navigation controls. Pass the same option to `RecommendationResultsSkeleton` when you need a matching fallback.
+
+---
+
 ## Copilot Instructions (excerpt)
 
 This project follows strict TypeScript, component, and repo conventions to keep code consistent and maintainable. Key points:

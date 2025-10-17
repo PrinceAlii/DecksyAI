@@ -4,40 +4,24 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { DeckCard, DeckDefinition } from "@/lib/data/deck-catalog";
-import { CARD_ART_FALLBACK, CARD_ART_PLACEHOLDER, getCardArtUrl, getExternalCardArtUrl } from "@/lib/data/card-art";
-
-interface Explainer {
-  summary: string;
-  substitutions: { card: string; suggestion: string }[];
-  matchupTips: { archetype: string; tip: string }[];
-}
-
-export interface RecommendationDeckResult {
-  deck: DeckDefinition;
-  score: number;
-  breakdown: {
-    collection: number;
-    trophies: number;
-    playstyle: number;
-    difficulty: number;
-  };
-  notes: string[];
-  explainer?: Explainer;
-}
+import { DeckCard } from "@/lib/data/deck-catalog";
+import { CARD_ART_PLACEHOLDER, getCardArtUrl, getExternalCardArtUrl } from "@/lib/data/card-art";
+import type { RecommendationDeckResult } from "@/lib/types/recommendation";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface RecommendationResultsProps {
   sessionId: string;
   playerTag: string;
   trophyInfo: string;
   results: RecommendationDeckResult[];
+  showHistoryNavigation?: boolean;
 }
 
 function DeckCardTile({ card }: { card: DeckCard }) {
@@ -81,7 +65,17 @@ function DeckCardTile({ card }: { card: DeckCard }) {
   );
 }
 
-export function RecommendationResults({ sessionId, playerTag, trophyInfo, results }: RecommendationResultsProps) {
+export function RecommendationResults({
+  sessionId,
+  playerTag,
+  trophyInfo,
+  results,
+  showHistoryNavigation = true,
+}: RecommendationResultsProps) {
+  if (results.length === 0) {
+    return <RecommendationResultsEmptyState sessionId={sessionId} />;
+  }
+
   const [selectedDeck, setSelectedDeck] = useState(results[0]?.deck.slug ?? "");
   const [feedbackNotes, setFeedbackNotes] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
@@ -114,21 +108,25 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
   return (
     <div className="space-y-10">
-      <div className="flex items-center justify-between">
-        <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
-          <Link href="/history">
-            <ArrowLeft className="size-4" />
-            Back to history
-          </Link>
-        </Button>
-      </div>
+      {showHistoryNavigation && (
+        <div className="flex items-center justify-between">
+          <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
+            <Link href="/history">
+              <ArrowLeft className="size-4" />
+              Back to history
+            </Link>
+          </Button>
+        </div>
+      )}
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-semibold text-text">Your deck recommendations</h1>
           <p className="text-sm text-text-muted">Tag #{playerTag} • {trophyInfo}</p>
         </div>
-        <Button variant="outline" className="gap-2" onClick={() => router.push("/history")}>View history</Button>
+        {showHistoryNavigation && (
+          <Button variant="outline" className="gap-2" onClick={() => router.push("/history")}>View history</Button>
+        )}
       </header>
 
       <div className="grid gap-8 items-start lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
@@ -283,6 +281,111 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
           </CardContent>
         </Card>
       </div>
+    </div>
+  );
+}
+
+export function RecommendationResultsSkeleton({ showHistoryNavigation = true }: { showHistoryNavigation?: boolean } = {}) {
+  return (
+    <div className="space-y-10">
+      {showHistoryNavigation && (
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-10 w-36" />
+        </div>
+      )}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-2">
+          <Skeleton className="h-8 w-64" />
+          <Skeleton className="h-4 w-48" />
+        </div>
+        {showHistoryNavigation && <Skeleton className="h-10 w-32" />}
+      </header>
+      <div className="grid gap-8 items-start lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)]">
+        <Card className="border-border bg-surface">
+          <CardContent className="flex flex-col gap-6 p-6">
+            <div className="flex flex-wrap gap-2">
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Skeleton key={index} className="h-9 w-32" />
+              ))}
+            </div>
+            <div className="flex flex-col gap-6">
+              <section className="flex flex-col gap-6 rounded-xl border border-border/80 bg-surface-muted/40 p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="space-y-2">
+                    <Skeleton className="h-7 w-56" />
+                    <Skeleton className="h-4 w-72" />
+                  </div>
+                  <Skeleton className="h-12 w-36" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {Array.from({ length: 4 }).map((_, index) => (
+                    <Skeleton key={index} className="h-12 w-full" />
+                  ))}
+                </div>
+                <div className="flex flex-col gap-3">
+                  <Skeleton className="h-4 w-40" />
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, index) => (
+                      <Skeleton key={index} className="h-36 w-full" />
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-16 w-full" />
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Skeleton className="h-10 w-36" />
+                  <Skeleton className="h-10 w-32" />
+                </div>
+              </section>
+              <section className="flex flex-col gap-4 rounded-xl border border-border/60 bg-surface-muted/30 p-6">
+                <Skeleton className="h-6 w-40" />
+                <Skeleton className="h-16 w-full" />
+              </section>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="border-border/60 bg-surface lg:sticky lg:top-8">
+          <CardContent className="flex flex-col gap-6 p-6">
+            <Skeleton className="h-6 w-40" />
+            <Skeleton className="h-24 w-full" />
+            <div className="flex flex-wrap gap-3">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-28" />
+            </div>
+            <Skeleton className="h-20 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
+export function RecommendationResultsEmptyState({ sessionId }: { sessionId?: string }) {
+  return (
+    <div className="space-y-6">
+      <Card className="border-border/60 bg-surface p-8 text-center">
+        <CardContent className="space-y-4 p-0">
+          <Sparkles className="mx-auto size-8 text-accent" />
+          <div className="space-y-2">
+            <h2 className="text-xl font-semibold text-text">No recommendations saved</h2>
+            <p className="text-sm text-text-muted">
+              {sessionId
+                ? `We couldn\'t find deck results for session ${sessionId}.`
+                : "We couldn\'t find any deck results."}
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button asChild variant="outline">
+              <Link href="/">Start a new recommendation</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/history">View history</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
