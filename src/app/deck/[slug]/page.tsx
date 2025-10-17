@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Badge } from "@/components/ui/badge";
 import { getDeckBySlug } from "@/lib/data/deck-catalog";
+import { getCardArtUrl } from "@/lib/data/card-art";
 import type { GeminiExplainer } from "@/lib/gemini";
 
 interface ExplainerRecord {
