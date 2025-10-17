@@ -190,10 +190,10 @@ export function DeckExplainerPanel({
                   };
                 case "error":
                   return {
-                    summary: event.fallback.summary,
-                    substitutions: event.fallback.substitutions,
-                    matchupTips: event.fallback.matchupTips,
-                    practicePlan: event.fallback.practicePlan,
+                    summary: event.fallback?.summary ?? "",
+                    substitutions: event.fallback?.substitutions ?? [],
+                    matchupTips: event.fallback?.matchupTips ?? [],
+                    practicePlan: event.fallback?.practicePlan ?? [],
                     status: "error",
                     error: event.error,
                     model: previous.model,

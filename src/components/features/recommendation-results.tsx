@@ -9,6 +9,7 @@ import { ArrowLeft, Loader2, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DeckCard, DeckDefinition } from "@/lib/data/deck-catalog";
 import { CARD_ART_FALLBACK, CARD_ART_PLACEHOLDER, getCardArtUrl, getExternalCardArtUrl } from "@/lib/data/card-art";
@@ -84,6 +85,7 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
   const [selectedDeck, setSelectedDeck] = useState(results[0]?.deck.slug ?? "");
   const [feedbackNotes, setFeedbackNotes] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
+  const [feedbackChannel, setFeedbackChannel] = useState("");
   const router = useRouter();
 
   const activeDeck = results.find((result) => result.deck.slug === selectedDeck) ?? results[0];
@@ -98,9 +100,11 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
           sessionId,
           rating,
           notes: feedbackNotes.length > 0 ? feedbackNotes : undefined,
+          channel: feedbackChannel,
         }),
       });
       setFeedbackNotes("");
+      setFeedbackChannel("");
     } catch (error) {
       console.warn("Unable to send feedback", error);
     } finally {
@@ -228,6 +232,17 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
         <Card className="border-border/60 bg-surface lg:sticky lg:top-8">
           <CardContent className="flex flex-col gap-6 p-6">
+            <div className="sr-only" aria-hidden="true">
+              <label htmlFor="feedback-channel">Preferred contact channel</label>
+              <Input
+                id="feedback-channel"
+                name="feedback-channel"
+                autoComplete="off"
+                tabIndex={-1}
+                value={feedbackChannel}
+                onChange={(event) => setFeedbackChannel(event.target.value)}
+              />
+            </div>
             <div className="space-y-1">
               <h3 className="text-lg font-semibold text-text">Leave feedback</h3>
               <p className="text-sm text-text-muted">Tell us how this recommendation felt after your matches.</p>
