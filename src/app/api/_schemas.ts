@@ -198,6 +198,7 @@ export const battleLogSchema = z
         opponent: z.string().min(1),
         result: z.enum(["win", "loss", "draw"]),
         deck: z.array(z.string().min(1)),
+        opponentDeck: z.array(z.string().min(1)),
         timestamp: z.string().min(1),
       })
       .strict(),
