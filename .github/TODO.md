@@ -19,6 +19,7 @@ Last updated: 2025-10-17
   * Recommendations UI with top-3 decks, breakdown, notes, and explainers.
   * Deck guide page with coach notes.
   * History list backed by DB or ephemeral store.
+  * History session detail view rendering stored breakdowns (`/history/[sessionId]`) with configurable navigation via `RecommendationResults`.
 * Docs & Conventions: `.github/copilot-instructions.md`, `AGENTS.md`, strict TypeScript, `@/*` imports, CVA variants, `cn()` helper.
 
 Known gaps and opportunities:

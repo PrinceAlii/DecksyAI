@@ -10,6 +10,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PlayerProfile, QuizResponse } from "@/lib/scoring";
+import {
+  MIN_PLAYER_TAG_LENGTH,
+  describePlayerTagRequirements,
+  isValidPlayerTag,
+  normalizePlayerTag,
+} from "@/lib/player-tag";
 
 interface BattleLogEntry {
   opponent: string;
@@ -35,27 +41,57 @@ export function PlayerOnboarding() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const normalizedTag = useMemo(() => normalizePlayerTag(playerTag), [playerTag]);
+  const tagIsValid = useMemo(() => isValidPlayerTag(playerTag), [playerTag]);
+  const showInlineValidation = playerTag.trim().length > 0 && !tagIsValid;
+  const inlineValidationMessage = useMemo(() => {
+    if (!showInlineValidation) {
+      return null;
+    }
+
+    if (normalizedTag.length === 0) {
+      return "Only enter characters found in Clash Royale tags.";
+    }
+
+    const remaining = Math.max(MIN_PLAYER_TAG_LENGTH - normalizedTag.length, 0);
+    return remaining > 0
+      ? `Add ${remaining} more ${remaining === 1 ? "character" : "characters"} to reach a valid tag.`
+      : null;
+  }, [normalizedTag.length, showInlineValidation]);
+
   useEffect(() => {
     if (player) {
       setStep(2);
     }
   }, [player]);
 
+  function handleTagChange(event: React.ChangeEvent<HTMLInputElement>) {
+    if (error) {
+      setError(null);
+    }
+    setPlayerTag(event.target.value);
+  }
+
   async function handleFetchPlayer(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
-    const sanitizedTag = playerTag.replace("#", "").toUpperCase();
+    const cleanedTag = normalizePlayerTag(playerTag);
 
-    if (sanitizedTag.length < 4) {
-      setError("Enter a valid player tag.");
+    if (!isValidPlayerTag(playerTag)) {
+      const remaining = Math.max(MIN_PLAYER_TAG_LENGTH - cleanedTag.length, 0);
+      if (remaining > 0) {
+        setError(`Add ${remaining} more ${remaining === 1 ? "character" : "characters"} to reach a valid tag.`);
+      } else {
+        setError(describePlayerTagRequirements());
+      }
       return;
     }
 
     try {
       setLoading(true);
       const [playerRes, battleRes] = await Promise.all([
-        fetch(`/api/player/${sanitizedTag}`),
-        fetch(`/api/battles/${sanitizedTag}`),
+        fetch(`/api/player/${cleanedTag}`),
+        fetch(`/api/battles/${cleanedTag}`),
       ]);
 
       if (!playerRes.ok) {
@@ -140,14 +176,44 @@ export function PlayerOnboarding() {
               name="tag"
               placeholder="#ABC123"
               value={playerTag}
-              onChange={(event) => setPlayerTag(event.target.value)}
+              onChange={handleTagChange}
               autoComplete="off"
+              inputMode="text"
+              autoCapitalize="characters"
+              autoCorrect="off"
+              spellCheck={false}
+              aria-invalid={showInlineValidation || Boolean(error)}
+              aria-describedby={[
+                "player-tag-guidance",
+                inlineValidationMessage ? "player-tag-inline-validation" : undefined,
+                error ? "player-tag-error" : undefined,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined}
+              data-invalid={showInlineValidation || error ? "true" : undefined}
             />
-            <Button type="submit" className="w-full justify-center gap-2" disabled={loading}>
+            <p id="player-tag-guidance" className="text-xs leading-relaxed text-text-muted">
+              {describePlayerTagRequirements()}
+              {normalizedTag.length > 0 && (
+                <span className="mt-1 block text-text">
+                  Normalized tag: <span className="font-medium">#{normalizedTag}</span>
+                </span>
+              )}
+            </p>
+            {inlineValidationMessage && (
+              <p id="player-tag-inline-validation" className="text-xs text-danger">
+                {inlineValidationMessage}
+              </p>
+            )}
+            <Button type="submit" className="w-full justify-center gap-2" disabled={loading || !tagIsValid}>
               {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
               Fetch my data
             </Button>
-            {error && <p className="text-sm text-danger">{error}</p>}
+            {error && (
+              <p id="player-tag-error" className="text-sm text-danger" role="alert" aria-live="polite">
+                {error}
+              </p>
+            )}
           </form>
         </CardContent>
       </Card>

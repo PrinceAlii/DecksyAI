@@ -1,96 +1,51 @@
+import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
-import { RecommendationResults, RecommendationDeckResult } from "@/components/features/recommendation-results";
+import {
+  RecommendationResults,
+  RecommendationResultsEmptyState,
+  RecommendationResultsSkeleton,
+} from "@/components/features/recommendation-results";
 import { Container } from "@/components/ui/container";
-import { DeckDefinition } from "@/lib/data/deck-catalog";
-import { prisma } from "@/lib/prisma";
-import { getRecommendation } from "@/lib/recommendation-store";
+import { loadRecommendationBySession } from "@/lib/server/recommendation-loader";
 
-interface RecommendationRecord {
-  sessionId: string;
-  player?: {
-    tag: string;
-    trophies: number;
-    arena: string;
-  };
-  playerTag?: string;
-  trophyRange?: string;
-  arena?: string;
-  scoreBreakdown?: unknown;
-  decks?: unknown;
-}
-
-function parseDecks(value: unknown): RecommendationDeckResult[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-  return value
-    .map((item) => {
-      const record = item as {
-        deck: DeckDefinition;
-        score: number;
-        breakdown: RecommendationDeckResult["breakdown"];
-        notes: string[];
-        explainer?: RecommendationDeckResult["explainer"];
-      };
-      return record.deck ? record : null;
-    })
-    .filter((item): item is RecommendationDeckResult => Boolean(item && item.deck));
-}
-
-export default async function RecommendPage({ searchParams }: { searchParams: { sessionId?: string } }) {
+export default function RecommendPage({ searchParams }: { searchParams: { sessionId?: string } }) {
   const sessionId = searchParams.sessionId;
 
   if (!sessionId) {
     notFound();
   }
 
-  let data: RecommendationRecord | null = null;
-
-  if (prisma) {
-    const record = await prisma.recommendation.findUnique({ where: { sessionId } });
-    if (record) {
-      data = {
-        sessionId: record.sessionId,
-        playerTag: record.playerTag,
-        arena: record.arena,
-        decks: record.decks,
-      };
-    }
-  } else {
-    const record = getRecommendation(sessionId);
-    if (record) {
-      data = {
-        sessionId: record.sessionId,
-        player: record.player as RecommendationRecord["player"],
-        decks: record.decks,
-      };
-    }
-  }
-
-  if (!data) {
-    notFound();
-  }
-
-  const decks = parseDecks(data.decks ?? data.scoreBreakdown);
-
-  if (decks.length === 0) {
-    notFound();
-  }
-
-  const playerTag = data.player?.tag ?? data.playerTag ?? "unknown";
-  const trophyInfo = data.player?.arena ?? data.arena ?? "Arena";
-
   return (
     <div className="bg-background py-16">
       <Container>
-        <RecommendationResults
-          sessionId={sessionId}
-          playerTag={playerTag.replace("#", "")}
-          trophyInfo={trophyInfo}
-          results={decks}
-        />
+        <Suspense fallback={<RecommendationResultsSkeleton />}>
+          <RecommendationResultsSection sessionId={sessionId} />
+        </Suspense>
       </Container>
     </div>
+  );
+}
+
+async function RecommendationResultsSection({ sessionId }: { sessionId: string }) {
+  const recommendation = await loadRecommendationBySession(sessionId);
+
+  if (!recommendation) {
+    notFound();
+  }
+
+  const playerTag = recommendation.playerTag.replace(/^#/, "");
+
+  if (recommendation.results.length === 0) {
+    return <RecommendationResultsEmptyState sessionId={sessionId} />;
+  }
+
+  return (
+    <RecommendationResults
+      sessionId={sessionId}
+      playerTag={playerTag}
+      trophyInfo={recommendation.trophyInfo}
+      results={recommendation.results}
+    />
   );
 }
