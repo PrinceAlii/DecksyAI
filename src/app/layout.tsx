@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "@/styles/globals.css";
 import { cn } from "@/lib/utils";
+import { CookieConsentBanner } from "@/components/ui/cookie-consent";
 
 export const metadata: Metadata = {
   title: "Decksy AI",
@@ -23,6 +24,7 @@ export default function RootLayout({
         )}
       >
         {children}
+        <CookieConsentBanner />
       </body>
     </html>
   );

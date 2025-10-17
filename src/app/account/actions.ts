@@ -1,11 +1,14 @@
 "use server";
 
+import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { recordAuditLog } from "@/lib/audit-log";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { writeAccountExport } from "@/lib/storage/account-export";
+import { COOKIE_CONSENT_COOKIE } from "@/app/actions/cookie-consent";
 
 export type UpdateProfileState = {
   status: "idle" | "success" | "error";
@@ -13,6 +16,22 @@ export type UpdateProfileState = {
 };
 
 const initialState: UpdateProfileState = { status: "idle" };
+
+export type ExportAccountState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+  downloadPath?: string;
+  checksum?: string;
+};
+
+const exportInitialState: ExportAccountState = { status: "idle" };
+
+export type DeleteAccountState = {
+  status: "idle" | "success" | "error";
+  message?: string;
+};
+
+const deleteInitialState: DeleteAccountState = { status: "idle" };
 
 const profileSchema = z.object({
   playerTag: z.string().max(16).optional(),
@@ -133,6 +152,218 @@ export async function updateProfileAction(
 }
 
 export { initialState as updateProfileInitialState };
+
+function serialiseRecord<T extends Record<string, unknown>>(record: T) {
+  const next: Record<string, unknown> = { ...record };
+
+  if (record && typeof record === "object") {
+    if (record instanceof Date) {
+      return record.toISOString() as unknown as T;
+    }
+
+    const maybeCreatedAt = (record as Record<string, unknown>).createdAt;
+    if (maybeCreatedAt instanceof Date) {
+      next.createdAt = maybeCreatedAt.toISOString();
+    }
+
+    const maybeUpdatedAt = (record as Record<string, unknown>).updatedAt;
+    if (maybeUpdatedAt instanceof Date) {
+      next.updatedAt = maybeUpdatedAt.toISOString();
+    }
+
+    const maybeDeletedAt = (record as Record<string, unknown>).deletedAt;
+    if (maybeDeletedAt instanceof Date) {
+      next.deletedAt = maybeDeletedAt.toISOString();
+    }
+  }
+
+  return next as T;
+}
+
+export async function exportAccountDataAction(
+  _prevState: ExportAccountState,
+): Promise<ExportAccountState> {
+  const session = await getServerAuthSession();
+
+  if (!session?.user?.id) {
+    return { status: "error", message: "You need to be signed in to export your account." };
+  }
+
+  if (!prisma) {
+    return {
+      status: "error",
+      message: "Database connection unavailable. Configure DATABASE_URL before exporting data.",
+    };
+  }
+
+  try {
+    const [userRecord, recommendationRecords, feedbackRecords] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        include: {
+          profile: true,
+          feedbackPreference: true,
+          accounts: true,
+          cookieConsent: true,
+        },
+      }),
+      prisma.recommendation.findMany({
+        where: { userId: session.user.id },
+        include: { feedback: true, explainers: true },
+        orderBy: { createdAt: "asc" },
+      }),
+      prisma.feedback.findMany({
+        where: { userId: session.user.id },
+        orderBy: { createdAt: "asc" },
+      }),
+    ]);
+
+    if (!userRecord) {
+      return { status: "error", message: "Unable to locate your account." };
+    }
+
+    const exportPayload = {
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      user: serialiseRecord(userRecord),
+      profile: userRecord.profile ? serialiseRecord(userRecord.profile) : null,
+      feedbackPreference: userRecord.feedbackPreference
+        ? serialiseRecord(userRecord.feedbackPreference)
+        : null,
+      accounts: userRecord.accounts.map((account) => ({
+        ...account,
+      })),
+      cookieConsent: userRecord.cookieConsent
+        ? serialiseRecord({ ...userRecord.cookieConsent })
+        : null,
+      recommendations: recommendationRecords.map((recommendation) => ({
+        ...serialiseRecord(recommendation),
+        feedback: recommendation.feedback.map(serialiseRecord),
+        explainers: recommendation.explainers.map((explainer) => ({
+          ...serialiseRecord(explainer),
+          recommendationId: explainer.recommendationId,
+        })),
+      })),
+      feedback: feedbackRecords.map(serialiseRecord),
+    };
+
+    const file = await writeAccountExport(session.user.id, exportPayload);
+
+    await prisma.accountDataExport.create({
+      data: {
+        userId: session.user.id,
+        storagePath: file.storagePath,
+        storageProvider: "filesystem",
+        fileSize: file.bytes,
+        checksum: file.checksum,
+        metadata: {
+          recommendationCount: recommendationRecords.length,
+          feedbackCount: feedbackRecords.length,
+        },
+      },
+    });
+
+    await recordAuditLog("account.exported", {
+      actorId: session.user.id,
+      metadata: {
+        storagePath: file.storagePath,
+        fileSize: file.bytes,
+      },
+    });
+
+    return {
+      status: "success",
+      message: "Your account export is ready. Use the admin tools to retrieve the bundle.",
+      downloadPath: file.storagePath,
+      checksum: file.checksum,
+    };
+  } catch (error) {
+    console.error("Failed to export account", error);
+    return {
+      status: "error",
+      message: "We couldn't build your export bundle. Please try again shortly.",
+    };
+  }
+}
+
+export { exportInitialState as exportAccountInitialState };
+
+export async function deleteAccountAction(
+  _prevState: DeleteAccountState,
+): Promise<DeleteAccountState> {
+  const session = await getServerAuthSession();
+
+  if (!session?.user?.id) {
+    return { status: "error", message: "You need to be signed in to delete your account." };
+  }
+
+  if (!prisma) {
+    return {
+      status: "error",
+      message: "Database connection unavailable. Configure DATABASE_URL before deleting accounts.",
+    };
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const recommendations = await tx.recommendation.findMany({
+        where: { userId: session.user.id },
+        select: { id: true },
+      });
+      const recommendationIds = recommendations.map((item) => item.id);
+
+      if (recommendationIds.length > 0) {
+        await tx.feedback.deleteMany({ where: { recommendationId: { in: recommendationIds } } });
+        await tx.explainer.updateMany({
+          where: { recommendationId: { in: recommendationIds } },
+          data: { recommendationId: null },
+        });
+        await tx.recommendation.deleteMany({ where: { id: { in: recommendationIds } } });
+      }
+
+      await tx.feedback.deleteMany({ where: { userId: session.user.id } });
+      await tx.feedbackPreference.deleteMany({ where: { userId: session.user.id } });
+      await tx.profile.deleteMany({ where: { userId: session.user.id } });
+      await tx.session.deleteMany({ where: { userId: session.user.id } });
+      await tx.account.deleteMany({ where: { userId: session.user.id } });
+      await tx.accountDataExport.deleteMany({ where: { userId: session.user.id } });
+      await tx.cookieConsent.deleteMany({ where: { userId: session.user.id } });
+
+      await tx.accountDeletion.create({
+        data: {
+          userId: session.user.id,
+          metadata: {
+            recommendationIds,
+          },
+        },
+      });
+
+      await tx.user.delete({ where: { id: session.user.id } });
+    });
+
+    cookies().delete(COOKIE_CONSENT_COOKIE);
+
+    await recordAuditLog("account.deleted", {
+      actorId: session.user.id,
+    });
+
+    revalidatePath("/");
+    revalidatePath("/account");
+
+    return {
+      status: "success",
+      message: "Your account and related recommendations have been removed. You will be signed out shortly.",
+    };
+  } catch (error) {
+    console.error("Failed to delete account", error);
+    return {
+      status: "error",
+      message: "We couldn't delete your account right now. Please try again soon.",
+    };
+  }
+}
+
+export { deleteInitialState as deleteAccountInitialState };
 
 export async function revokeSessionsAction(
   _prevState: UpdateProfileState,

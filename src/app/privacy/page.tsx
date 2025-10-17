@@ -9,6 +9,7 @@ const sections = [
       "Player tag, arena, trophy range, and deck recommendations generated during your session.",
       "Feedback you voluntarily submit through thumbs up/down ratings and notes.",
       "Technical logs required to keep the service reliable (request IDs, timestamps).",
+      "A consent cookie that remembers whether you opted into optional analytics.",
     ],
   },
   {
@@ -22,9 +23,18 @@ const sections = [
   {
     title: "Your choices",
     body: [
+      "Signed-in players can export or delete their account data from the account page whenever they need.",
       "You can delete recommendation history at any time from the history page.",
-      "We only store sessions for 30 days unless you opt into an account (coming soon).",
-      "Contact privacy@decksy.ai for exports or deletion requests—expect a response within 7 days.",
+      "Use the cookie banner (or revisit this page) to update your analytics consent whenever you change your mind.",
+      "Contact privacy@decksy.ai if you need help—we usually respond within 7 days.",
+    ],
+  },
+  {
+    title: "Cookies & analytics",
+    body: [
+      "We only load analytics scripts after you grant consent; essential cookies keep sessions secure.",
+      "Analytics data is aggregated and never linked back to your Clash Royale identity.",
+      "The consent cookie expires after 12 months and can be cleared sooner from your browser settings.",
     ],
   },
 ];

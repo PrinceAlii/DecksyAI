@@ -6,64 +6,67 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String          @unique
-  image         String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  profile       Profile?
-  recommendations Recommendation[]
-  feedback      Feedback[]
+  id                 String              @id @default(cuid())
+  name               String?
+  email              String              @unique
+  image              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  profile            Profile?
+  recommendations    Recommendation[]
+  feedback           Feedback[]
   feedbackPreference FeedbackPreference?
-  accounts      Account[]
-  sessions      Session[]
+  accounts           Account[]
+  sessions           Session[]
+  dataExports        AccountDataExport[]
+  deletionLogs       AccountDeletion[]
+  cookieConsent      CookieConsent?
 }
 
 model Profile {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String   @unique
-  playerTag String?
-  trophies  Int?
-  arena     String?
-  playstyle String?
-  bio       String?
+  id                String   @id @default(cuid())
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String   @unique
+  playerTag         String?
+  trophies          Int?
+  arena             String?
+  playstyle         String?
+  bio               String?
   favoriteArchetype String?
-  updatedAt DateTime @updatedAt
+  updatedAt         DateTime @updatedAt
 }
 
 model DeckCatalog {
-  id            String   @id @default(cuid())
-  slug          String   @unique
-  name          String
-  archetype     String
-  trophyBand    String
-  trophyRange   Json
-  playstyles    Json
-  archetypeNotes String
-  description   String
-  averageElixir Float
-  cards         Json
-  strengths     Json
-  weaknesses    Json
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String           @id @default(cuid())
+  slug            String           @unique
+  name            String
+  archetype       String
+  trophyBand      String
+  trophyRange     Json
+  playstyles      Json
+  archetypeNotes  String
+  description     String
+  averageElixir   Float
+  cards           Json
+  strengths       Json
+  weaknesses      Json
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   recommendations Recommendation[]
-  explainers    Explainer[]
+  explainers      Explainer[]
 }
 
 model Recommendation {
-  id             String     @id @default(cuid())
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
-  sessionId      String     @unique
+  id             String       @id @default(cuid())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  sessionId      String       @unique
   playerTag      String
   trophyRange    String
   arena          String
@@ -71,7 +74,7 @@ model Recommendation {
   rationale      Json
   scoreBreakdown Json
   decks          Json
-  user           User?      @relation(fields: [userId], references: [id])
+  user           User?        @relation(fields: [userId], references: [id])
   userId         String?
   deckCatalog    DeckCatalog? @relation(fields: [deckCatalogId], references: [id])
   deckCatalogId  String?
@@ -80,41 +83,41 @@ model Recommendation {
 }
 
 model Explainer {
-  id                String       @id @default(cuid())
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
-  deck              DeckCatalog  @relation(fields: [deckId], references: [id])
-  deckId            String
-  recommendation    Recommendation? @relation(fields: [recommendationId], references: [id])
-  recommendationId  String?
-  summary           String
-  substitutions     Json
-  matchupTips       Json
+  id               String          @id @default(cuid())
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  deck             DeckCatalog     @relation(fields: [deckId], references: [id])
+  deckId           String
+  recommendation   Recommendation? @relation(fields: [recommendationId], references: [id])
+  recommendationId String?
+  summary          String
+  substitutions    Json
+  matchupTips      Json
 }
 
 model Feedback {
-  id               String       @id @default(cuid())
-  createdAt        DateTime     @default(now())
+  id               String         @id @default(cuid())
+  createdAt        DateTime       @default(now())
   recommendation   Recommendation @relation(fields: [recommendationId], references: [id])
   recommendationId String
-  user             User?        @relation(fields: [userId], references: [id])
+  user             User?          @relation(fields: [userId], references: [id])
   userId           String?
   rating           Int
   notes            String?
 }
 
 model FeedbackPreference {
-  id                String   @id @default(cuid())
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  user              User     @relation(fields: [userId], references: [id])
-  userId            String   @unique
-  collectionWeight  Float    @default(0.4)
-  trophiesWeight    Float    @default(0.2)
-  playstyleWeight   Float    @default(0.3)
-  difficultyWeight  Float    @default(0.1)
-  preferArchetypes  String[] @default([])
-  avoidArchetypes   String[] @default([])
+  id               String   @id @default(cuid())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User     @relation(fields: [userId], references: [id])
+  userId           String   @unique
+  collectionWeight Float    @default(0.4)
+  trophiesWeight   Float    @default(0.2)
+  playstyleWeight  Float    @default(0.3)
+  difficultyWeight Float    @default(0.1)
+  preferArchetypes String[] @default([])
+  avoidArchetypes  String[] @default([])
 }
 
 model AuditLog {
@@ -125,20 +128,52 @@ model AuditLog {
   metadata  Json
 }
 
+model AccountDataExport {
+  id              String   @id @default(cuid())
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String
+  storagePath     String
+  storageProvider String   @default("filesystem")
+  fileSize        Int
+  checksum        String
+  metadata        Json?
+
+  @@index([userId, createdAt])
+}
+
+model AccountDeletion {
+  id        String   @id @default(cuid())
+  deletedAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  metadata  Json?
+}
+
+model CookieConsent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String?  @unique
+  analytics Boolean  @default(false)
+  marketing Boolean  @default(false)
+}
+
 model Account {
-  id                 String   @id @default(cuid())
-  userId             String
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?  @db.Text
-  access_token       String?  @db.Text
-  expires_at         Int?
-  token_type         String?
-  scope              String?
-  id_token           String?  @db.Text
-  session_state      String?
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }

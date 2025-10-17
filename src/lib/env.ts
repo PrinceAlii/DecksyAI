@@ -39,6 +39,7 @@ const serverEnvSchema = z.object({
   EMAIL_FROM: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
+  ACCOUNT_EXPORT_DIR: z.string().optional(),
 });
 
 let cachedEnv: Env | null = null;
@@ -84,6 +85,7 @@ export function getServerEnv(): Env {
       EMAIL_FROM: process.env.EMAIL_FROM,
       NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
       SENTRY_DSN: process.env.SENTRY_DSN,
+      ACCOUNT_EXPORT_DIR: process.env.ACCOUNT_EXPORT_DIR,
     });
 
     if (!result.success) {
