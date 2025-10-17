@@ -121,19 +121,26 @@ export function PlayerOnboarding() {
     try {
       setLoading(true);
       setError(null);
+      
+      const payload = {
+        player,
+        quiz,
+      };
+      
+      console.log("Sending recommendation payload:", JSON.stringify(payload, null, 2));
+      
       const response = await fetch("/api/recommend", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          player,
-          quiz,
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
-        throw new Error("Failed to generate recommendations");
+        const errorData = await response.json().catch(() => null);
+        console.error("Recommendation error:", errorData);
+        throw new Error(errorData?.error || "Failed to generate recommendations");
       }
 
       const json = (await response.json()) as { sessionId: string };

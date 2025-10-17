@@ -7,7 +7,7 @@ interface ClashRoyalePlayerResponse {
   name: string;
   trophies: number;
   currentArena: { name: string };
-  cards: { name: string; id: number; level: number; maxLevel: number; key: string }[];
+  cards: { name: string; id: number; level: number; maxLevel: number; key?: string }[];
 }
 
 const MOCK_COLLECTION: PlayerCollectionCard[] = [
@@ -58,7 +58,12 @@ export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
       name: data.name,
       trophies: data.trophies,
       arena: data.currentArena?.name ?? "Unknown Arena",
-      collection: data.cards.map((card) => ({ key: card.key, level: card.level })),
+      collection: data.cards
+        .filter((card) => card.key || card.name)
+        .map((card) => ({
+          key: card.key || card.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""),
+          level: card.level,
+        })),
     };
 
     await cacheSet(cacheKey, profile, 300);
