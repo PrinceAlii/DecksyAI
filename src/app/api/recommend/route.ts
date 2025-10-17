@@ -2,9 +2,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 
+import {
+  deckScoreSchema,
+  errorResponseSchema,
+  recommendationPayloadSchema,
+  recommendationResponseSchema,
+} from "@/app/api/_schemas";
 import { deckCatalog } from "@/lib/data/deck-catalog";
 import { generateExplainer } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit, withRetryHeaders } from "@/lib/rate-limit";
 import { rankDecks, RecommendationPayload } from "@/lib/scoring";
 import { getRecommendation, saveRecommendation } from "@/lib/recommendation-store";
 
@@ -37,7 +44,32 @@ async function persistRecommendation(
 }
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as RecommendationPayload;
+  const rateLimitState = await enforceRateLimit({
+    request,
+    resource: "api:recommend:post",
+    limit: 8,
+    refillIntervalMs: 60_000,
+  });
+
+  if (!rateLimitState.ok) {
+    const response = NextResponse.json(
+      errorResponseSchema.parse({ error: "Too many recommendation requests" }),
+      { status: 429 },
+    );
+    return withRetryHeaders(response, rateLimitState);
+  }
+
+  const parsed = recommendationPayloadSchema.safeParse(await request.json());
+
+  if (!parsed.success) {
+    const response = NextResponse.json(
+      errorResponseSchema.parse({ error: "Invalid recommendation payload", details: parsed.error.flatten() }),
+      { status: 400 },
+    );
+    return withRetryHeaders(response, rateLimitState);
+  }
+
+  const body = parsed.data as RecommendationPayload;
 
   const sessionId = randomUUID();
   const scores = rankDecks(deckCatalog, body);
@@ -76,33 +108,41 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json(
-    {
-      sessionId,
-      results: enrichedDecks,
-    },
-    { status: 200 },
-  );
+  const payload = recommendationResponseSchema.parse({
+    sessionId,
+    results: enrichedDecks,
+  });
+
+  const response = NextResponse.json(payload, { status: 200 });
+  return withRetryHeaders(response, rateLimitState);
 }
 
 export async function GET(request: NextRequest) {
   const sessionId = request.nextUrl.searchParams.get("sessionId");
 
   if (!sessionId) {
-    return NextResponse.json({ error: "sessionId is required" }, { status: 400 });
+    return NextResponse.json(errorResponseSchema.parse({ error: "sessionId is required" }), { status: 400 });
   }
 
   if (prisma) {
     const recommendation = await prisma.recommendation.findUnique({ where: { sessionId } });
     if (recommendation) {
-      return NextResponse.json(recommendation, { status: 200 });
+      const parsed = deckScoreSchema.array().safeParse(recommendation.decks);
+      if (parsed.success) {
+        const payload = recommendationResponseSchema.parse({ sessionId, results: parsed.data });
+        return NextResponse.json(payload, { status: 200 });
+      }
     }
   }
 
   const ephemeral = getRecommendation(sessionId);
   if (ephemeral) {
-    return NextResponse.json(ephemeral, { status: 200 });
+    const parsed = deckScoreSchema.array().safeParse(ephemeral.decks);
+    if (parsed.success) {
+      const payload = recommendationResponseSchema.parse({ sessionId, results: parsed.data });
+      return NextResponse.json(payload, { status: 200 });
+    }
   }
 
-  return NextResponse.json({ error: "Recommendation not found" }, { status: 404 });
+  return NextResponse.json(errorResponseSchema.parse({ error: "Recommendation not found" }), { status: 404 });
 }

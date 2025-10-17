@@ -10,6 +10,8 @@ const serverEnvSchema = z.object({
   DATABASE_URL: z.string().optional(),
   DIRECT_URL: z.string().optional(),
   REDIS_URL: z.string().optional(),
+  INTERNAL_API_TOKEN: z.string().optional(),
+  FEEDBACK_USER_AGENT_BLOCKLIST: z.string().optional(),
   // When true, allow connecting to Redis TLS endpoints with self-signed
   // certificates by setting `tls.rejectUnauthorized = false` in the client.
   // This weakens TLS verification and should only be used when necessary.
@@ -59,6 +61,8 @@ export function getServerEnv(): Env {
       DATABASE_URL: process.env.DATABASE_URL || herokuDbUrl,
       DIRECT_URL: process.env.DIRECT_URL,
       REDIS_URL: process.env.REDIS_URL || herokuRedis,
+      INTERNAL_API_TOKEN: process.env.INTERNAL_API_TOKEN,
+      FEEDBACK_USER_AGENT_BLOCKLIST: process.env.FEEDBACK_USER_AGENT_BLOCKLIST,
       REDIS_TLS_ALLOW_SELF_SIGNED: process.env.REDIS_TLS_ALLOW_SELF_SIGNED,
       REDIS_ALLOW_INSECURE_TLS: process.env.REDIS_ALLOW_INSECURE_TLS,
       NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
