@@ -11,7 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { DeckCard, DeckDefinition } from "@/lib/data/deck-catalog";
-import { CARD_ART_FALLBACK, getCardArtUrl } from "@/lib/data/card-art";
+import { CARD_ART_FALLBACK, CARD_ART_PLACEHOLDER, getCardArtUrl, getExternalCardArtUrl } from "@/lib/data/card-art";
 
 interface Explainer {
   summary: string;
@@ -40,15 +40,23 @@ interface RecommendationResultsProps {
 }
 
 function DeckCardTile({ card }: { card: DeckCard }) {
-  const [hasError, setHasError] = useState(false);
-  const imageSrc = hasError ? CARD_ART_FALLBACK : getCardArtUrl(card);
+  const [errorCount, setErrorCount] = useState(0);
+  
+  // Try local first, then external CDN, then placeholder
+  const getImageSrc = () => {
+    if (errorCount === 0) {
+      return getCardArtUrl(card);
+    } else if (errorCount === 1) {
+      return getExternalCardArtUrl(card);
+    }
+    return CARD_ART_PLACEHOLDER;
+  };
+
+  const imageSrc = getImageSrc();
 
   return (
     <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center transition hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
-      <div
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/60 bg-surface"
-        style={{ backgroundImage: `url(${CARD_ART_FALLBACK})` }}
-      >
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/60 bg-surface">
         <Image
           src={imageSrc}
           alt={card.name}
@@ -57,8 +65,9 @@ function DeckCardTile({ card }: { card: DeckCard }) {
           className="object-cover"
           unoptimized
           onError={() => {
-            if (!hasError) {
-              setHasError(true);
+            // Try next fallback
+            if (errorCount < 2) {
+              setErrorCount(errorCount + 1);
             }
           }}
         />
