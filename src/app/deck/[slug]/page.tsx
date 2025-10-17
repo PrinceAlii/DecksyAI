@@ -4,11 +4,13 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ListChecks } from "lucide-react";
 
+import { DeckExplainerPanel } from "@/components/features/deck-explainer/deck-explainer-panel";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { Badge } from "@/components/ui/badge";
 import { getDeckBySlug } from "@/lib/data/deck-catalog";
+import type { GeminiExplainer } from "@/lib/gemini";
 
 interface ExplainerRecord {
   deck: {
@@ -19,11 +21,7 @@ interface ExplainerRecord {
     strengths: string[];
     weaknesses: string[];
   };
-  explainers?: {
-    summary: string;
-    substitutions: { card: string; suggestion: string }[];
-    matchupTips: { archetype: string; tip: string }[];
-  }[];
+  explainers?: GeminiExplainer[];
 }
 
 async function fetchExplainer(slug: string, origin: string, sessionId?: string) {
@@ -67,6 +65,7 @@ export default async function DeckPage({
 
   const data = await fetchExplainer(deck.slug, origin, searchParams.sessionId);
   const explainer = data?.explainers?.[0];
+  const practicePlanEnabled = process.env.NEXT_PUBLIC_FEATURE_PRACTICE_PLAN === "true";
 
   return (
     <div className="bg-background py-16">
@@ -157,31 +156,13 @@ export default async function DeckPage({
           </CardContent>
         </Card>
 
-        {explainer && (
-          <Card className="border-border/60 bg-surface">
-            <CardContent className="space-y-4 p-6">
-              <h2 className="text-xl font-semibold text-text">Gemini coach notes</h2>
-              <p className="text-sm text-text-muted">{explainer.summary}</p>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <h3 className="text-sm font-medium text-text">Substitutions</h3>
-                  <ul className="mt-2 space-y-2 text-sm text-text-muted">
-                    {explainer.substitutions.map((sub) => (
-                      <li key={`${sub.card}-${sub.suggestion}`}>{sub.card}: {sub.suggestion}</li>
-                    ))}
-                  </ul>
-                </div>
-                <div>
-                  <h3 className="text-sm font-medium text-text">Matchups</h3>
-                  <ul className="mt-2 space-y-2 text-sm text-text-muted">
-                    {explainer.matchupTips.map((tip) => (
-                      <li key={`${tip.archetype}-${tip.tip}`}>{tip.tip}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {(explainer || searchParams.sessionId) && (
+          <DeckExplainerPanel
+            deckSlug={deck.slug}
+            sessionId={searchParams.sessionId}
+            initialExplainer={explainer ?? null}
+            practicePlanEnabled={practicePlanEnabled}
+          />
         )}
       </Container>
     </div>

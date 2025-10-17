@@ -40,13 +40,14 @@ describe("buildPrompt", () => {
 describe("parseGeminiPayload", () => {
   it("parses valid JSON wrapped in code fences", () => {
     const payload = parseGeminiPayload(
-      "```json\n{\"summary\":\"ok\",\"substitutions\":[{\"card\":\"Knight\",\"suggestion\":\"Upgrade\"}],\"matchupTips\":[{\"archetype\":\"Cycle\",\"tip\":\"Control bridge spam\"}]}\n```",
+      "```json\n{\"summary\":\"ok\",\"substitutions\":[{\"card\":\"Knight\",\"suggestion\":\"Upgrade\"}],\"matchupTips\":[{\"archetype\":\"Cycle\",\"tip\":\"Control bridge spam\"}],\"practicePlan\":[{\"focus\":\"Micro-cycles\",\"drill\":\"Play trainer battles\",\"reps\":\"3x\"}]}\n```",
     );
 
     expect(payload).toEqual({
       summary: "ok",
       substitutions: [{ card: "Knight", suggestion: "Upgrade" }],
       matchupTips: [{ archetype: "Cycle", tip: "Control bridge spam" }],
+      practicePlan: [{ focus: "Micro-cycles", drill: "Play trainer battles", reps: "3x" }],
     });
   });
 
