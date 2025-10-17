@@ -21,6 +21,7 @@ model User {
   profile       Profile?
   recommendations Recommendation[]
   feedback      Feedback[]
+  feedbackPreference FeedbackPreference?
   accounts      Account[]
   sessions      Session[]
 }
@@ -100,6 +101,20 @@ model Feedback {
   userId           String?
   rating           Int
   notes            String?
+}
+
+model FeedbackPreference {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id])
+  userId            String   @unique
+  collectionWeight  Float    @default(0.4)
+  trophiesWeight    Float    @default(0.2)
+  playstyleWeight   Float    @default(0.3)
+  difficultyWeight  Float    @default(0.1)
+  preferArchetypes  String[] @default([])
+  avoidArchetypes   String[] @default([])
 }
 
 model AuditLog {

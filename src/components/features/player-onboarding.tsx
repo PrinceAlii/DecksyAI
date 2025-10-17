@@ -15,6 +15,7 @@ interface BattleLogEntry {
   opponent: string;
   result: "win" | "loss" | "draw";
   deck: string[];
+  opponentDeck?: string[];
   timestamp: string;
 }
 
