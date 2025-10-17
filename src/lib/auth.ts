@@ -139,5 +139,25 @@ export async function getServerAuthSession() {
     return null;
   }
 
-  return getServerSession(authOptions);
+  try {
+    return await getServerSession(authOptions);
+  } catch (err: unknown) {
+    // next-auth throws a MissingSecretError (code: 'NO_SECRET') in production
+    // when no NEXTAUTH_SECRET is provided. Swallow that specific error so
+    // server-rendered pages that call `getServerAuthSession` don't crash the
+    // whole app. We still log a helpful message to the server logs so the
+    // deploy owner can fix the configuration.
+    //
+    // Note: other unexpected errors should be re-thrown to avoid hiding real
+    // problems.
+    const e = err as any;
+    if (e?.code === "NO_SECRET" || /secret/i.test(e?.message ?? "")) {
+      console.error(
+        "[next-auth] Missing NEXTAUTH_SECRET in production. Set NEXTAUTH_SECRET in Heroku (use `openssl rand -base64 32`) or your deployment provider.`",
+      );
+      return null;
+    }
+
+    throw err;
+  }
 }

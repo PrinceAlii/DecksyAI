@@ -47,6 +47,14 @@ Create a `.env.local` file and populate the values below as needed:
    npx prisma migrate deploy
    ```
 2. Configure `DATABASE_URL`, `NEXTAUTH_SECRET`, and either Resend (`RESEND_API_KEY` + `EMAIL_FROM`) or a trusted SMTP provider.
+
+Note for Heroku deployments: set the `NEXTAUTH_SECRET` config var in the Heroku dashboard (Settings → Config Vars). You can generate a suitable value locally with:
+
+```bash
+openssl rand -base64 32
+```
+
+Heroku will not populate this automatically; omitting it causes Auth.js to throw a runtime error in production.
 3. (Optional) Add GitHub OAuth credentials to enable one-click sign-in.
 4. Start the app. The login page now issues 10-minute magic links, persists sessions, and exposes session revocation controls under `/account`.
 
