@@ -2,11 +2,33 @@ import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
 import { Prisma } from "@prisma/client";
 
+import type { DeckArchetype } from "@/lib/clash-royale";
 import { deckCatalog } from "@/lib/data/deck-catalog";
+import { fetchBattleArchetypeAggregate } from "@/lib/clash-royale";
 import { generateExplainer } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
 import { rankDecks, RecommendationPayload } from "@/lib/scoring";
 import { getRecommendation, saveRecommendation } from "@/lib/recommendation-store";
+
+async function resolveFeedbackPreferences(userId?: string) {
+  if (!userId || !prisma) {
+    return undefined;
+  }
+
+  const record = await prisma.feedbackPreference.findUnique({ where: { userId } });
+  if (!record) {
+    return undefined;
+  }
+
+  return {
+    collectionWeight: record.collectionWeight,
+    trophiesWeight: record.trophiesWeight,
+    playstyleWeight: record.playstyleWeight,
+    difficultyWeight: record.difficultyWeight,
+    preferArchetypes: (record.preferArchetypes as DeckArchetype[] | null) ?? undefined,
+    avoidArchetypes: (record.avoidArchetypes as DeckArchetype[] | null) ?? undefined,
+  };
+}
 
 async function persistRecommendation(
   sessionId: string,
@@ -39,8 +61,19 @@ async function persistRecommendation(
 export async function POST(request: NextRequest) {
   const body = (await request.json()) as RecommendationPayload;
 
+  const [battleAggregate, feedbackPreferences] = await Promise.all([
+    body.player?.tag ? fetchBattleArchetypeAggregate(body.player.tag).catch(() => undefined) : Promise.resolve(undefined),
+    body.feedbackPreferences ? Promise.resolve(body.feedbackPreferences) : resolveFeedbackPreferences(body.userId),
+  ]);
+
+  const payload: RecommendationPayload = {
+    ...body,
+    battleAggregate: battleAggregate ?? body.battleAggregate,
+    feedbackPreferences: feedbackPreferences ?? body.feedbackPreferences,
+  };
+
   const sessionId = randomUUID();
-  const scores = rankDecks(deckCatalog, body);
+  const scores = rankDecks(deckCatalog, payload);
 
   const breakdown = scores.map((score) => ({
     deck: score.deck.slug,
@@ -69,8 +102,8 @@ export async function POST(request: NextRequest) {
   } else {
     saveRecommendation({
       sessionId,
-      player: body.player,
-      quiz: body.quiz,
+      player: payload.player,
+      quiz: payload.quiz,
       scoreBreakdown: breakdown,
       decks: enrichedDecks,
     });

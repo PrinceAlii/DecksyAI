@@ -1,3 +1,4 @@
+import { deckCatalog } from "@/lib/data/deck-catalog";
 import { cacheGet, cacheSet } from "@/lib/redis";
 import { PlayerCollectionCard, PlayerProfile } from "@/lib/scoring";
 
@@ -76,11 +77,19 @@ export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
   }
 }
 
+export type DeckArchetype = (typeof deckCatalog)[number]["archetype"];
+
 export interface BattleLogEntry {
   opponent: string;
   result: "win" | "loss" | "draw";
   deck: string[];
+  opponentDeck: string[];
   timestamp: string;
+}
+
+export interface BattleArchetypeAggregate {
+  totalBattles: number;
+  archetypeExposure: Partial<Record<DeckArchetype, number>>;
 }
 
 export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
@@ -156,6 +165,7 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
         opponent: opponentEntry?.name ?? "Unknown",
         result,
         deck: resolveDeck(teamEntry),
+        opponentDeck: resolveDeck(opponentEntry),
         timestamp: match.battleTime,
       };
     });
@@ -169,16 +179,74 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
         opponent: "Ladder Legend",
         result: "win",
         deck: ["mega_knight", "miner", "wall_breakers", "bats"],
+        opponentDeck: ["royal_giant", "fisherman", "mother_witch", "hunter"],
         timestamp: new Date().toISOString(),
       },
       {
         opponent: "Spell Cycle",
         result: "loss",
         deck: ["x_bow", "tesla", "archers"],
+        opponentDeck: ["hog_rider", "ice_golem", "musketeer", "cannon"],
         timestamp: new Date(Date.now() - 3600 * 1000).toISOString(),
       },
     ];
     await cacheSet(cacheKey, mock, 120);
     return mock;
   }
+}
+
+const deckArchetypeIndex = deckCatalog.map((deck) => ({
+  archetype: deck.archetype,
+  cards: new Set(deck.cards.map((card) => card.key)),
+}));
+
+function inferArchetypeFromDeck(deckCards: string[]): DeckArchetype | null {
+  if (deckCards.length === 0) {
+    return null;
+  }
+
+  let bestMatch: { archetype: (typeof deckCatalog)[number]["archetype"]; score: number } | null = null;
+
+  for (const entry of deckArchetypeIndex) {
+    let matches = 0;
+    for (const card of deckCards) {
+      if (entry.cards.has(card)) {
+        matches += 1;
+      }
+    }
+
+    const score = matches / entry.cards.size;
+    if (!bestMatch || score > bestMatch.score) {
+      bestMatch = { archetype: entry.archetype, score };
+    }
+  }
+
+  if (!bestMatch || bestMatch.score < 0.4) {
+    return null;
+  }
+
+  return bestMatch.archetype;
+}
+
+export function aggregateBattleArchetypes(battles: BattleLogEntry[]): BattleArchetypeAggregate {
+  const exposure: BattleArchetypeAggregate["archetypeExposure"] = {};
+
+  for (const battle of battles) {
+    const archetype = inferArchetypeFromDeck(battle.opponentDeck);
+    if (!archetype) {
+      continue;
+    }
+
+    exposure[archetype] = (exposure[archetype] ?? 0) + 1;
+  }
+
+  return {
+    totalBattles: battles.length,
+    archetypeExposure: exposure,
+  };
+}
+
+export async function fetchBattleArchetypeAggregate(tag: string): Promise<BattleArchetypeAggregate> {
+  const battles = await fetchBattleLog(tag);
+  return aggregateBattleArchetypes(battles);
 }

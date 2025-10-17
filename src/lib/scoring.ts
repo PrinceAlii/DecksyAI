@@ -1,4 +1,7 @@
+import type { BattleArchetypeAggregate, DeckArchetype } from "@/lib/clash-royale";
 import { DeckDefinition } from "@/lib/data/deck-catalog";
+import { trackAnalytics } from "@/lib/analytics";
+import { assignExperimentVariant } from "@/lib/feature-flags";
 
 export interface PlayerCollectionCard {
   key: string;
@@ -34,6 +37,214 @@ export interface DeckScore {
 export interface RecommendationPayload {
   player: PlayerProfile;
   quiz: QuizResponse;
+  userId?: string;
+  sessionId?: string;
+  feedbackPreferences?: FeedbackPreferences;
+  battleAggregate?: BattleArchetypeAggregate;
+  weightVariantOverride?: string;
+}
+
+export interface FeedbackPreferences {
+  collectionWeight?: number;
+  trophiesWeight?: number;
+  playstyleWeight?: number;
+  difficultyWeight?: number;
+  preferArchetypes?: DeckArchetype[];
+  avoidArchetypes?: DeckArchetype[];
+}
+
+export interface WeightVector {
+  collection: number;
+  trophies: number;
+  playstyle: number;
+  difficulty: number;
+}
+
+export interface WeightStrategy {
+  weights: WeightVector;
+  variant: string;
+  defaultVariant: string;
+  assignmentReason: "override" | "rollout";
+}
+
+const BASE_WEIGHTS: WeightVector = {
+  collection: 0.4,
+  trophies: 0.2,
+  playstyle: 0.3,
+  difficulty: 0.1,
+};
+
+const MIN_WEIGHT = 0.05;
+
+function normaliseWeights(weights: WeightVector): WeightVector {
+  const total = weights.collection + weights.trophies + weights.playstyle + weights.difficulty;
+  if (total <= 0) {
+    return { ...BASE_WEIGHTS };
+  }
+  const normalised = {
+    collection: weights.collection / total,
+    trophies: weights.trophies / total,
+    playstyle: weights.playstyle / total,
+    difficulty: weights.difficulty / total,
+  } satisfies WeightVector;
+
+  const result: WeightVector = { collection: 0, trophies: 0, playstyle: 0, difficulty: 0 };
+  let remaining = 1;
+  const adjustableKeys: Array<keyof WeightVector> = [];
+
+  for (const key of Object.keys(normalised) as Array<keyof WeightVector>) {
+    if (normalised[key] < MIN_WEIGHT) {
+      result[key] = MIN_WEIGHT;
+      remaining -= MIN_WEIGHT;
+    } else {
+      adjustableKeys.push(key);
+    }
+  }
+
+  const adjustableTotal = adjustableKeys.reduce((sum, key) => sum + normalised[key], 0);
+  const safeRemaining = Math.max(remaining, 0);
+
+  for (const key of adjustableKeys) {
+    if (adjustableTotal === 0) {
+      result[key] = safeRemaining / adjustableKeys.length;
+    } else {
+      result[key] = (normalised[key] / adjustableTotal) * safeRemaining;
+    }
+  }
+
+  return result;
+}
+
+function applyFeedbackPreferenceWeights(weights: WeightVector, preferences?: FeedbackPreferences): WeightVector {
+  if (!preferences) {
+    return weights;
+  }
+
+  const overridden: WeightVector = {
+    collection: preferences.collectionWeight ?? weights.collection,
+    trophies: preferences.trophiesWeight ?? weights.trophies,
+    playstyle: preferences.playstyleWeight ?? weights.playstyle,
+    difficulty: preferences.difficultyWeight ?? weights.difficulty,
+  };
+
+  return normaliseWeights(overridden);
+}
+
+const exposureAdjustments: Record<DeckArchetype, Partial<WeightVector>> = {
+  beatdown: { playstyle: 0.05, difficulty: 0.05 },
+  control: { collection: 0.05, playstyle: 0.05 },
+  cycle: { difficulty: 0.05, trophies: 0.05 },
+  siege: { playstyle: 0.05, collection: 0.05 },
+  spell: { collection: 0.05, difficulty: 0.05 },
+  tempo: { playstyle: 0.05, trophies: 0.05 },
+};
+
+function applyExposureWeights(
+  weights: WeightVector,
+  aggregate?: BattleArchetypeAggregate,
+  intensity = 1,
+): WeightVector {
+  if (!aggregate || aggregate.totalBattles === 0) {
+    return weights;
+  }
+
+  const adjusted: WeightVector = { ...weights };
+
+  for (const [archetypeKey, count] of Object.entries(aggregate.archetypeExposure)) {
+    const archetype = archetypeKey as DeckArchetype;
+    const exposure = typeof count === "number" ? count : 0;
+    if (exposure <= 0) {
+      continue;
+    }
+
+    const ratio = exposure / aggregate.totalBattles;
+    const modifiers = exposureAdjustments[archetype];
+    if (!modifiers) {
+      continue;
+    }
+
+    for (const [category, value] of Object.entries(modifiers)) {
+      const key = category as keyof WeightVector;
+      const delta = (value ?? 0) * ratio * intensity;
+      adjusted[key] = Math.max(MIN_WEIGHT, adjusted[key] + delta);
+    }
+  }
+
+  return normaliseWeights(adjusted);
+}
+
+const archetypeCounterMatrix: Record<DeckArchetype, DeckArchetype[]> = {
+  beatdown: ["control", "cycle"],
+  control: ["beatdown", "tempo"],
+  cycle: ["beatdown", "spell"],
+  siege: ["beatdown", "tempo"],
+  spell: ["control", "cycle"],
+  tempo: ["control", "cycle"],
+};
+
+function calculateMetaAlignmentBonus(
+  deck: DeckDefinition,
+  preferences?: FeedbackPreferences,
+  aggregate?: BattleArchetypeAggregate,
+): number {
+  let bonus = 0;
+
+  if (preferences) {
+    if (preferences.preferArchetypes?.includes(deck.archetype)) {
+      bonus += 5;
+    }
+    if (preferences.avoidArchetypes?.includes(deck.archetype)) {
+      bonus -= 5;
+    }
+  }
+
+  if (aggregate && aggregate.totalBattles > 0) {
+    let counterRatio = 0;
+    for (const [archetypeKey, count] of Object.entries(aggregate.archetypeExposure)) {
+      const archetype = archetypeKey as DeckArchetype;
+      const exposure = typeof count === "number" ? count : 0;
+      if (exposure <= 0) {
+        continue;
+      }
+
+      const ratio = exposure / aggregate.totalBattles;
+      const counters = archetypeCounterMatrix[archetype] ?? [];
+
+      if (counters.includes(deck.archetype)) {
+        counterRatio += ratio;
+      } else if (deck.archetype === archetype) {
+        counterRatio -= ratio * 0.5;
+      }
+    }
+
+    if (counterRatio !== 0) {
+      bonus += clamp(counterRatio * 15, -8, 8);
+    }
+  }
+
+  return bonus;
+}
+
+export function resolveWeightStrategy(payload: RecommendationPayload): WeightStrategy {
+  const assignment = assignExperimentVariant("deck-weighting", {
+    userId: payload.userId,
+    playerTag: payload.player?.tag,
+    sessionId: payload.sessionId,
+    overrideVariant: payload.weightVariantOverride,
+  });
+
+  const intensity = assignment.variant === "meta-aware" ? 1.5 : 1;
+
+  let weights = normaliseWeights({ ...BASE_WEIGHTS });
+  weights = applyFeedbackPreferenceWeights(weights, payload.feedbackPreferences);
+  weights = applyExposureWeights(weights, payload.battleAggregate, intensity);
+
+  return {
+    weights,
+    variant: assignment.variant,
+    defaultVariant: assignment.descriptor.defaultVariant,
+    assignmentReason: assignment.reason,
+  };
 }
 
 function clamp(value: number, min: number, max: number): number {
@@ -108,17 +319,29 @@ function scoreDifficulty(deck: DeckDefinition, quiz: QuizResponse): number {
   return clamp(100 - difference, 40, 100);
 }
 
-export function scoreDeck(deck: DeckDefinition, payload: RecommendationPayload): DeckScore {
+export function scoreDeck(
+  deck: DeckDefinition,
+  payload: RecommendationPayload,
+  strategy?: WeightStrategy,
+): DeckScore {
   const collection = scoreCollection(deck, payload.player);
   const trophies = scoreTrophies(deck, payload.player);
   const playstyle = scorePlaystyle(deck, payload.quiz);
   const difficulty = scoreDifficulty(deck, payload.quiz);
 
+  const activeStrategy = strategy ?? resolveWeightStrategy(payload);
+
   const weightedScore = clamp(
-    collection.score * 0.4 + trophies * 0.2 + playstyle * 0.3 + difficulty * 0.1,
+    collection.score * activeStrategy.weights.collection +
+      trophies * activeStrategy.weights.trophies +
+      playstyle * activeStrategy.weights.playstyle +
+      difficulty * activeStrategy.weights.difficulty,
     0,
     100,
   );
+
+  const metaBonus = calculateMetaAlignmentBonus(deck, payload.feedbackPreferences, payload.battleAggregate);
+  const finalScore = clamp(weightedScore + metaBonus, 0, 100);
 
   const notes: string[] = [];
   if (collection.missingCards.length > 0) {
@@ -130,10 +353,33 @@ export function scoreDeck(deck: DeckDefinition, payload: RecommendationPayload):
   if (playstyle < 50) {
     notes.push("Playstyle alignment is limited; expect a learning curve.");
   }
+  if (payload.battleAggregate && payload.battleAggregate.totalBattles > 0) {
+    const exposures = Object.entries(payload.battleAggregate.archetypeExposure)
+      .filter(([, count]) => typeof count === "number" && count > 0)
+      .sort((a, b) => (Number(b[1]) || 0) - (Number(a[1]) || 0));
+
+    if (exposures.length > 0) {
+      const [topArchetype, count] = exposures[0];
+      const ratio = payload.battleAggregate.totalBattles
+        ? ((Number(count) ?? 0) / payload.battleAggregate.totalBattles) * 100
+        : 0;
+      notes.push(`Recent opponents leaned into ${topArchetype} archetypes (~${Math.round(ratio)}%).`);
+    }
+  }
+
+  if (metaBonus > 1) {
+    notes.push(`Meta alignment bonus applied (+${Math.round(metaBonus)}).`);
+  } else if (metaBonus < -1) {
+    notes.push(`Meta alignment penalty applied (${Math.round(metaBonus)}).`);
+  }
+
+  if (activeStrategy.variant !== activeStrategy.defaultVariant) {
+    notes.push(`Weight variant: ${activeStrategy.variant} (${activeStrategy.assignmentReason}).`);
+  }
 
   return {
     deck,
-    score: Math.round(weightedScore),
+    score: Math.round(finalScore),
     breakdown: {
       collection: Math.round(collection.score),
       trophies: Math.round(trophies),
@@ -145,8 +391,36 @@ export function scoreDeck(deck: DeckDefinition, payload: RecommendationPayload):
 }
 
 export function rankDecks(decks: DeckDefinition[], payload: RecommendationPayload): DeckScore[] {
-  return decks
-    .map((deck) => scoreDeck(deck, payload))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 3);
+  const strategy = resolveWeightStrategy(payload);
+
+  if (strategy.variant !== strategy.defaultVariant) {
+    trackAnalytics({
+      name: "experiment_assignment",
+      properties: {
+        experiment: "deck-weighting",
+        variant: strategy.variant,
+        reason: strategy.assignmentReason,
+        userId: payload.userId ?? null,
+        playerTag: payload.player?.tag ?? null,
+      },
+    });
+  }
+
+  const scores = decks.map((deck) => scoreDeck(deck, payload, strategy)).sort((a, b) => b.score - a.score);
+  const top = scores.slice(0, 3);
+
+  if (strategy.variant !== strategy.defaultVariant) {
+    trackAnalytics({
+      name: "experiment_exposure",
+      properties: {
+        experiment: "deck-weighting",
+        variant: strategy.variant,
+        topDecks: top.map((entry) => entry.deck.slug),
+        userId: payload.userId ?? null,
+        playerTag: payload.player?.tag ?? null,
+      },
+    });
+  }
+
+  return top;
 }
