@@ -1,0 +1,18 @@
+<svg width="320" height="428" viewBox="0 0 320 428" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="card-fallback-sheen" x1="16" y1="24" x2="304" y2="404" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#312E81"/>
+      <stop offset="0.4" stop-color="#1E3A8A"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <radialGradient id="card-fallback-glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(160 152) rotate(90) scale(168 220)">
+      <stop stop-color="#60A5FA" stop-opacity="0.65"/>
+      <stop offset="1" stop-color="#1E3A8A" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="8" y="8" width="304" height="412" rx="28" fill="url(#card-fallback-sheen)" stroke="rgba(255,255,255,0.08)" stroke-width="16"/>
+  <rect x="28" y="32" width="264" height="364" rx="24" fill="rgba(15,23,42,0.85)"/>
+  <circle cx="160" cy="188" r="88" fill="url(#card-fallback-glow)"/>
+  <path d="M120 292c0-40.8 23.2-70 40-70s40 29.2 40 70v8H120v-8Z" fill="rgba(148,163,184,0.35)"/>
+  <circle cx="160" cy="188" r="56" fill="rgba(148,163,184,0.3)"/>
+</svg>

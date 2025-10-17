@@ -11,6 +11,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { DeckCard, DeckDefinition } from "@/lib/data/deck-catalog";
+import { CARD_ART_FALLBACK, getCardArtUrl } from "@/lib/data/card-art";
 
 interface Explainer {
   summary: string;
@@ -38,31 +39,15 @@ interface RecommendationResultsProps {
   results: RecommendationDeckResult[];
 }
 
-const CARD_IMAGE_BASE_URL = "https://royaleapi.github.io/cr-api-assets/cards-150/";
-
-const CARD_IMAGE_OVERRIDES: Record<string, string> = {
-  log: "the-log",
-  snowball: "giant-snowball",
-};
-
-function getCardImageSrc(card: DeckCard) {
-  if (card.image) {
-    return card.image;
-  }
-
-  const key = CARD_IMAGE_OVERRIDES[card.key] ?? card.key.replace(/_/g, "-");
-  return `${CARD_IMAGE_BASE_URL}${key}.png`;
-}
-
 function DeckCardTile({ card }: { card: DeckCard }) {
   const [hasError, setHasError] = useState(false);
-  const imageSrc = hasError ? "/cards/placeholder.svg" : getCardImageSrc(card);
+  const imageSrc = hasError ? CARD_ART_FALLBACK : getCardArtUrl(card);
 
   return (
     <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center transition hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
       <div
         className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/60 bg-surface"
-        style={{ backgroundImage: "url(/cards/placeholder.svg)" }}
+        style={{ backgroundImage: `url(${CARD_ART_FALLBACK})` }}
       >
         <Image
           src={imageSrc}
