@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-import { COOKIE_CONSENT_COOKIE } from "@/app/actions/cookie-consent";
+import { COOKIE_CONSENT_COOKIE } from "@/lib/constants";
 import { CookieConsentBannerClient } from "@/components/ui/cookie-consent-client";
 import { getServerAuthSession } from "@/lib/auth";
 import { getServerEnv } from "@/lib/env";

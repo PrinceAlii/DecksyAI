@@ -48,7 +48,7 @@ export function CookieConsentBannerClient({ privacyHref = "/privacy" }: CookieCo
           Essential only
         </Button>
         <Button asChild size="sm" variant="ghost" disabled={pending} className="ml-auto text-xs">
-          <Link href={privacyHref}>Privacy controls</Link>
+          <Link href={privacyHref as any}>Privacy controls</Link>
         </Button>
       </div>
       {error && <p className="mt-2 text-xs text-danger">{error}</p>}

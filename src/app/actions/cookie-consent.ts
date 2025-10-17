@@ -5,9 +5,8 @@ import { z } from "zod";
 
 import { recordAuditLog } from "@/lib/audit-log";
 import { getServerAuthSession } from "@/lib/auth";
+import { COOKIE_CONSENT_COOKIE } from "@/lib/constants";
 import { prisma } from "@/lib/prisma";
-
-export const COOKIE_CONSENT_COOKIE = "decksy.cookie-consent";
 
 const consentSchema = z.object({
   analytics: z.boolean(),

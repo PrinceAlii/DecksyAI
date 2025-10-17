@@ -8,7 +8,7 @@ import { recordAuditLog } from "@/lib/audit-log";
 import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeAccountExport } from "@/lib/storage/account-export";
-import { COOKIE_CONSENT_COOKIE } from "@/app/actions/cookie-consent";
+import { COOKIE_CONSENT_COOKIE } from "@/lib/constants";
 
 export type UpdateProfileState = {
   status: "idle" | "success" | "error";
@@ -304,10 +304,12 @@ export async function deleteAccountAction(
     };
   }
 
+  const userId = session.user.id;
+
   try {
     await prisma.$transaction(async (tx) => {
       const recommendations = await tx.recommendation.findMany({
-        where: { userId: session.user.id },
+        where: { userId },
         select: { id: true },
       });
       const recommendationIds = recommendations.map((item) => item.id);
@@ -321,30 +323,30 @@ export async function deleteAccountAction(
         await tx.recommendation.deleteMany({ where: { id: { in: recommendationIds } } });
       }
 
-      await tx.feedback.deleteMany({ where: { userId: session.user.id } });
-      await tx.feedbackPreference.deleteMany({ where: { userId: session.user.id } });
-      await tx.profile.deleteMany({ where: { userId: session.user.id } });
-      await tx.session.deleteMany({ where: { userId: session.user.id } });
-      await tx.account.deleteMany({ where: { userId: session.user.id } });
-      await tx.accountDataExport.deleteMany({ where: { userId: session.user.id } });
-      await tx.cookieConsent.deleteMany({ where: { userId: session.user.id } });
+      await tx.feedback.deleteMany({ where: { userId } });
+      await tx.feedbackPreference.deleteMany({ where: { userId } });
+      await tx.profile.deleteMany({ where: { userId } });
+      await tx.session.deleteMany({ where: { userId } });
+      await tx.account.deleteMany({ where: { userId } });
+      await tx.accountDataExport.deleteMany({ where: { userId } });
+      await tx.cookieConsent.deleteMany({ where: { userId } });
 
       await tx.accountDeletion.create({
         data: {
-          userId: session.user.id,
+          userId,
           metadata: {
             recommendationIds,
           },
         },
       });
 
-      await tx.user.delete({ where: { id: session.user.id } });
+      await tx.user.delete({ where: { id: userId } });
     });
 
     cookies().delete(COOKIE_CONSENT_COOKIE);
 
     await recordAuditLog("account.deleted", {
-      actorId: session.user.id,
+      actorId: userId,
     });
 
     revalidatePath("/");
@@ -381,9 +383,11 @@ export async function revokeSessionsAction(
     };
   }
 
+  const userId = session.user.id;
+
   try {
-    await prisma.session.deleteMany({ where: { userId: session.user.id } });
-    await recordAuditLog("auth.sessions_revoked", { actorId: session.user.id });
+    await prisma.session.deleteMany({ where: { userId } });
+    await recordAuditLog("auth.sessions_revoked", { actorId: userId });
     revalidatePath("/account");
     return { status: "success", message: "All sessions revoked. Sign in again to continue." };
   } catch (error) {
