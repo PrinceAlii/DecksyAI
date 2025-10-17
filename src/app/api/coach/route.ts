@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { coachRequestSchema, coachResponseSchema, coachScoreSchema, errorResponseSchema, explainerSchema } from "@/app/api/_schemas";
 import { deckCatalog, getDeckBySlug } from "@/lib/data/deck-catalog";
 import { generateExplainer, generateExplainerStream } from "@/lib/gemini";
 import { prisma } from "@/lib/prisma";
+import { enforceRateLimit, withRetryHeaders } from "@/lib/rate-limit";
 import { RecommendationPayload, scoreDeck, DeckScore, PlayerProfile } from "@/lib/scoring";
 import { getRecommendation } from "@/lib/recommendation-store";
 
@@ -122,17 +124,55 @@ function streamExplainerResponse(deckSlug: string, sessionId: string | null) {
 }
 
 export async function POST(request: NextRequest) {
-  const body = (await request.json()) as RecommendationPayload & { deckSlug?: string };
+  const rateLimitState = await enforceRateLimit({
+    request,
+    resource: "api:coach:post",
+    limit: 12,
+    refillIntervalMs: 60_000,
+  });
+
+  if (!rateLimitState.ok) {
+    const response = NextResponse.json(
+      errorResponseSchema.parse({ error: "Too many coaching requests" }),
+      { status: 429 },
+    );
+    return withRetryHeaders(response, rateLimitState);
+  }
+
+  const parsed = coachRequestSchema.safeParse(await request.json());
+
+  if (!parsed.success) {
+    const response = NextResponse.json(
+      errorResponseSchema.parse({ error: "Invalid coaching payload", details: parsed.error.flatten() }),
+      { status: 400 },
+    );
+    return withRetryHeaders(response, rateLimitState);
+  }
+
+  const body = parsed.data as RecommendationPayload & { deckSlug?: string };
   const deck = body.deckSlug ? getDeckBySlug(body.deckSlug) : deckCatalog[0];
 
   if (!deck) {
-    return NextResponse.json({ error: "Deck not found" }, { status: 404 });
+    return withRetryHeaders(
+      NextResponse.json(errorResponseSchema.parse({ error: "Deck not found" }), { status: 404 }),
+      rateLimitState,
+    );
   }
 
   const score = scoreDeck(deck, body);
   const explainer = await generateExplainer(deck, score, body.player);
+  const responsePayload = coachResponseSchema.parse({
+    deck,
+    score: coachScoreSchema.parse({
+      total: score.score,
+      breakdown: score.breakdown,
+      notes: score.notes.length > 0 ? score.notes : undefined,
+    }),
+    explainer,
+  });
 
-  return NextResponse.json({ deck, score, explainer }, { status: 200 });
+  const response = NextResponse.json(responsePayload, { status: 200 });
+  return withRetryHeaders(response, rateLimitState);
 }
 
 export async function GET(request: NextRequest) {
@@ -141,7 +181,7 @@ export async function GET(request: NextRequest) {
   const shouldStream = request.nextUrl.searchParams.get("stream") === "1";
 
   if (!deckSlug) {
-    return NextResponse.json({ error: "deck parameter required" }, { status: 400 });
+    return NextResponse.json(errorResponseSchema.parse({ error: "deck parameter required" }), { status: 400 });
   }
 
   if (shouldStream) {
@@ -157,17 +197,26 @@ export async function GET(request: NextRequest) {
 
   const deck = getDeckBySlug(deckSlug);
   if (!deck) {
-    return NextResponse.json({ error: "Deck not found" }, { status: 404 });
+    return NextResponse.json(errorResponseSchema.parse({ error: "Deck not found" }), { status: 404 });
   }
 
   if (!sessionId || !prisma) {
-    return NextResponse.json({ deck }, { status: 200 });
+    const payload = coachResponseSchema.parse({ deck });
+    return NextResponse.json(payload, { status: 200 });
   }
 
   const recommendation = await prisma.recommendation.findUnique({ where: { sessionId } });
   const explainers = await prisma.explainer.findMany({
     where: { deck: { slug: deckSlug }, recommendationId: recommendation?.id },
   });
+  const normalisedExplainers = explainers
+    .map((entry) => ({
+      summary: entry.summary,
+      substitutions: entry.substitutions as unknown,
+      matchupTips: entry.matchupTips as unknown,
+    }))
+    .map((payload) => explainerSchema.parse(payload));
 
-  return NextResponse.json({ deck, explainers }, { status: 200 });
+  const payload = coachResponseSchema.parse({ deck, explainers: normalisedExplainers });
+  return NextResponse.json(payload, { status: 200 });
 }
