@@ -43,6 +43,10 @@ model DeckCatalog {
   slug          String   @unique
   name          String
   archetype     String
+  trophyBand    String
+  trophyRange   Json
+  playstyles    Json
+  archetypeNotes String
   description   String
   averageElixir Float
   cards         Json
