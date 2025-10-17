@@ -714,3 +714,10 @@ export const deckCatalog: DeckDefinition[] = [
     weaknesses: ["Gives elixir if stopped", "Needs spell timing", "Weak vs Inferno Tower"],
   },
 ];
+
+/**
+ * Get a deck by its slug
+ */
+export function getDeckBySlug(slug: string): DeckDefinition | undefined {
+  return deckCatalog.find((deck) => deck.slug === slug);
+}

@@ -12,7 +12,7 @@ async function persistRecommendation(
   sessionId: string,
   payload: RecommendationPayload,
   breakdown: unknown,
-  explainers: unknown,
+  enrichedDecks: unknown,
 ) {
   if (!prisma) {
     return;
@@ -24,9 +24,9 @@ async function persistRecommendation(
     trophyRange: `${payload.player.trophies}`,
     arena: payload.player.arena,
     playstyle: payload.quiz.preferredPace,
-    rationale: payload.quiz as unknown as Prisma.JsonObject,
-    scoreBreakdown: breakdown as Prisma.JsonArray,
-    decks: explainers as Prisma.JsonArray,
+    rationale: payload.quiz as unknown as Prisma.InputJsonValue,
+    scoreBreakdown: breakdown as unknown as Prisma.InputJsonValue,
+    decks: enrichedDecks as unknown as Prisma.InputJsonValue,
   };
 
   await prisma.recommendation.upsert({
