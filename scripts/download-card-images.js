@@ -33,9 +33,19 @@ function fetchUrl(url) {
 
 async function downloadCard(key, dest) {
   const hyphen = key.replace(/_/g, '-');
+  
+  // Known card name overrides from the CDN
+  const nameOverrides = {
+    'log': 'the-log',
+    'snowball': 'giant-snowball',
+  };
+  
+  const altName = nameOverrides[key] || hyphen;
   const urls = [
+    `https://royaleapi.github.io/cr-api-assets/cards-150/${altName}.png`,
     `https://royaleapi.github.io/cr-api-assets/cards-150/${hyphen}.png`,
     `https://royaleapi.github.io/cr-api-assets/cards-150/${key}.png`,
+    `https://royaleapi.github.io/static/img/cards-150/${altName}.png`,
     `https://royaleapi.github.io/static/img/cards-150/${hyphen}.png`,
     `https://royaleapi.github.io/static/img/cards-150/${key}.png`,
   ];
