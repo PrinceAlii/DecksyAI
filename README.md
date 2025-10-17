@@ -44,8 +44,15 @@ Create a `.env.local` file and populate the values below as needed:
 
 1. Apply Prisma migrations to provision the Auth.js tables:
    ```bash
+   # Create migrations locally (run once, commit the migrations)
+   npx prisma migrate dev --name init
+
+   # Apply migrations in production (Heroku will run this automatically if you
+   # include a Procfile with a release phase). You can also run it manually:
    npx prisma migrate deploy
    ```
+
+Note: this repository includes a `Procfile` that runs `npx prisma migrate deploy` during Heroku releases. Ensure you have created and committed migration files locally (via `npx prisma migrate dev`) before deploying so the release step can apply them.
 2. Configure `DATABASE_URL`, `NEXTAUTH_SECRET`, and either Resend (`RESEND_API_KEY` + `EMAIL_FROM`) or a trusted SMTP provider.
 
 Note for Heroku deployments: set the `NEXTAUTH_SECRET` config var in the Heroku dashboard (Settings → Config Vars). You can generate a suitable value locally with:
@@ -57,6 +64,30 @@ openssl rand -base64 32
 Heroku will not populate this automatically; omitting it causes Auth.js to throw a runtime error in production.
 3. (Optional) Add GitHub OAuth credentials to enable one-click sign-in.
 4. Start the app. The login page now issues 10-minute magic links, persists sessions, and exposes session revocation controls under `/account`.
+
+### Troubleshooting: Prisma P2022 (missing columns)
+
+If you see runtime errors like `PrismaClientKnownRequestError` with code `P2022` mentioning a missing column (for example `The column 'User.name' does not exist`), it means your database schema is out of sync with `prisma/schema.prisma`.
+
+Common fixes:
+
+- Make sure you have created and committed migration files locally using:
+
+```bash
+npx prisma migrate dev --name init
+git add prisma/migrations
+git commit -m "prisma: add migrations"
+```
+
+- Deploy your app. The included `Procfile` will run `npx prisma migrate deploy` during Heroku release to apply committed migrations. Alternatively, run the deploy command manually on your production database:
+
+```bash
+npx prisma migrate deploy --preview-feature
+```
+
+- If you cannot apply migrations to the live database, you can inspect the current schema using `npx prisma db pull` (be careful: `db push` and `--accept-data-loss` can be destructive).
+
+If you're unsure, share the exact `P2022` message and I can suggest the safest remediation steps.
 
 ## Redis TLS (Heroku / managed providers)
 

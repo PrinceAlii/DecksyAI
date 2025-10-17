@@ -72,7 +72,7 @@ export default async function DeckPage({
     <div className="bg-background py-16">
       <Container className="space-y-10">
         <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
-          <Link href="/recommend">
+          <Link href={searchParams.sessionId ? `/recommend?sessionId=${encodeURIComponent(searchParams.sessionId)}` : "/recommend"}>
             <ArrowLeft className="size-4" />
             Back to recommendations
           </Link>
@@ -94,7 +94,14 @@ export default async function DeckPage({
               <h2 className="text-sm font-medium uppercase tracking-wide text-text-muted">Card lineup</h2>
               <div className="grid gap-3 sm:grid-cols-4">
                 {deck.cards.map((card) => {
-                  const imageSrc = card.image ?? `https://royaleapi.github.io/static/img/cards-150/${card.key}.png`;
+                  // Try a few more resilient external filenames. Many CDNs use
+                  // hyphenated names (mega-knight) rather than underscores
+                  // (mega_knight). Prefer a local `public/cards` override if
+                  // present, otherwise attempt the hyphenated remote image.
+                  const localSrc = `/cards/${card.key}.png`;
+                  const remoteUnderscore = `https://royaleapi.github.io/static/img/cards-150/${card.key}.png`;
+                  const remoteHyphen = `https://royaleapi.github.io/static/img/cards-150/${card.key.replace(/_/g, "-")}.png`;
+                  const imageSrc = card.image ?? localSrc ?? remoteHyphen ?? remoteUnderscore;
                   return (
                     <div
                       key={card.key}
