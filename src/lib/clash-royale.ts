@@ -126,8 +126,20 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
         cards?: Array<{ key?: string; name?: string }>;
         deck?: Array<{ key?: string; name?: string }>;
       }>;
-      opponent?: Array<{ name?: string; crowns?: number; crownsEarned?: number }>;
-      opponentTeam?: Array<{ name?: string; crowns?: number; crownsEarned?: number }>;
+      opponent?: Array<{
+        name?: string;
+        crowns?: number;
+        crownsEarned?: number;
+        cards?: Array<{ key?: string; name?: string }>;
+        deck?: Array<{ key?: string; name?: string }>;
+      }>;
+      opponentTeam?: Array<{
+        name?: string;
+        crowns?: number;
+        crownsEarned?: number;
+        cards?: Array<{ key?: string; name?: string }>;
+        deck?: Array<{ key?: string; name?: string }>;
+      }>;
     }>;
 
     const resolveDeck = (player?: {

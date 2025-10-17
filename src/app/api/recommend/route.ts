@@ -141,12 +141,12 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  const payload = recommendationResponseSchema.parse({
+  const responsePayload = recommendationResponseSchema.parse({
     sessionId,
     results: enrichedDecks,
   });
 
-  const response = NextResponse.json(payload, { status: 200 });
+  const response = NextResponse.json(responsePayload, { status: 200 });
   return withRetryHeaders(response, rateLimitState);
 }
 
