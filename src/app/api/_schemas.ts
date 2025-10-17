@@ -112,6 +112,27 @@ export const recommendationPayloadSchema = z
   .object({
     player: playerProfileSchema,
     quiz: quizResponseSchema,
+    userId: z.string().min(1).optional(),
+    sessionId: z.string().uuid().optional(),
+    feedbackPreferences: z
+      .object({
+        collectionWeight: z.number().optional(),
+        trophiesWeight: z.number().optional(),
+        playstyleWeight: z.number().optional(),
+        difficultyWeight: z.number().optional(),
+        preferArchetypes: z.array(z.enum(["beatdown", "control", "cycle", "siege", "spell", "tempo"])).optional(),
+        avoidArchetypes: z.array(z.enum(["beatdown", "control", "cycle", "siege", "spell", "tempo"])).optional(),
+      })
+      .strict()
+      .optional(),
+    battleAggregate: z
+      .object({
+        totalBattles: z.number().int().nonnegative(),
+        archetypeExposure: z.record(z.enum(["beatdown", "control", "cycle", "siege", "spell", "tempo"]), z.number()),
+      })
+      .strict()
+      .optional(),
+    weightVariantOverride: z.string().min(1).optional(),
   })
   .strict();
 

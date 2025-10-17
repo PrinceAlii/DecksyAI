@@ -4,7 +4,7 @@ const CHARACTER_CORRECTIONS: Record<string, string> = {
   O: "0",
 };
 
-export const MIN_PLAYER_TAG_LENGTH = 8;
+export const MIN_PLAYER_TAG_LENGTH = 7;
 export const MAX_PLAYER_TAG_LENGTH = 14;
 
 export function normalizePlayerTag(input: string): string {
@@ -27,5 +27,5 @@ export function isValidPlayerTag(input: string): boolean {
 }
 
 export function describePlayerTagRequirements(): string {
-  return "Player tags use 0, 2, 8, 9, P, Y, L, Q, G, R, J, C, U, or V and are at least 8 characters long.";
+  return "Player tags use 0, 2, 8, 9, P, Y, L, Q, G, R, J, C, U, or V and are at least 7 characters long.";
 }

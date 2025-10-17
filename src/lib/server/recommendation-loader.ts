@@ -73,35 +73,37 @@ function parseDeckResults(value: unknown): RecommendationDeckResult[] {
     return [];
   }
 
-  return value
-    .map((item) => {
-      if (!item || typeof item !== "object") {
-        return null;
-      }
-      const record = item as RecommendationDeckResult & { explainer?: unknown };
-      if (!record.deck || typeof record.deck !== "object" || typeof record.deck.slug !== "string") {
-        return null;
-      }
+  const results: RecommendationDeckResult[] = [];
 
-      const breakdown = record.breakdown ?? { collection: 0, trophies: 0, playstyle: 0, difficulty: 0 };
-      const notes = Array.isArray(record.notes)
-        ? record.notes.filter((note): note is string => typeof note === "string")
-        : [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") {
+      continue;
+    }
+    const record = item as RecommendationDeckResult & { explainer?: unknown };
+    if (!record.deck || typeof record.deck !== "object" || typeof record.deck.slug !== "string") {
+      continue;
+    }
 
-      return {
-        deck: record.deck,
-        score: typeof record.score === "number" ? record.score : 0,
-        breakdown: {
-          collection: breakdown.collection ?? 0,
-          trophies: breakdown.trophies ?? 0,
-          playstyle: breakdown.playstyle ?? 0,
-          difficulty: breakdown.difficulty ?? 0,
-        },
-        notes,
-        explainer: parseExplainer(record.explainer),
-      } satisfies RecommendationDeckResult;
-    })
-    .filter((entry): entry is RecommendationDeckResult => entry !== null);
+    const breakdown = record.breakdown ?? { collection: 0, trophies: 0, playstyle: 0, difficulty: 0 };
+    const notes = Array.isArray(record.notes)
+      ? record.notes.filter((note): note is string => typeof note === "string")
+      : [];
+
+    results.push({
+      deck: record.deck,
+      score: typeof record.score === "number" ? record.score : 0,
+      breakdown: {
+        collection: breakdown.collection ?? 0,
+        trophies: breakdown.trophies ?? 0,
+        playstyle: breakdown.playstyle ?? 0,
+        difficulty: breakdown.difficulty ?? 0,
+      },
+      notes,
+      explainer: parseExplainer(record.explainer),
+    });
+  }
+
+  return results;
 }
 
 function parseScoreBreakdown(value: unknown): RecommendationScoreBreakdown[] {

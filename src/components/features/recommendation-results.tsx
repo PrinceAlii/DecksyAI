@@ -72,15 +72,16 @@ export function RecommendationResults({
   results,
   showHistoryNavigation = true,
 }: RecommendationResultsProps) {
-  if (results.length === 0) {
-    return <RecommendationResultsEmptyState sessionId={sessionId} />;
-  }
-
+  // Always call hooks before any early returns
   const [selectedDeck, setSelectedDeck] = useState(results[0]?.deck.slug ?? "");
   const [feedbackNotes, setFeedbackNotes] = useState("");
   const [submittingFeedback, setSubmittingFeedback] = useState(false);
   const [feedbackChannel, setFeedbackChannel] = useState("");
   const router = useRouter();
+
+  if (results.length === 0) {
+    return <RecommendationResultsEmptyState sessionId={sessionId} />;
+  }
 
   const activeDeck = results.find((result) => result.deck.slug === selectedDeck) ?? results[0];
 
