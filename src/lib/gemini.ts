@@ -6,10 +6,17 @@ import { getServerEnv, isDevelopment } from "@/lib/env";
 import { cacheGet, cacheSet } from "@/lib/redis";
 import { DeckScore, PlayerProfile } from "@/lib/scoring";
 
-interface GeminiExplainer {
+export interface GeminiPracticeDrill {
+  focus: string;
+  drill: string;
+  reps?: string;
+}
+
+export interface GeminiExplainer {
   summary: string;
   substitutions: { card: string; suggestion: string }[];
   matchupTips: { archetype: string; tip: string }[];
+  practicePlan?: GeminiPracticeDrill[];
 }
 
 function fallbackExplainer(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): GeminiExplainer {
@@ -22,6 +29,17 @@ function fallbackExplainer(deck: DeckDefinition, score: DeckScore, player: Playe
     matchupTips: [
       { archetype: "Beatdown", tip: "Punish heavy tanks by splitting pressure once they drop Golem/Giant." },
       { archetype: "Cycle", tip: "Keep spell value high and hold your best counter for their win condition." },
+    ],
+    practicePlan: [
+      {
+        focus: "Opening tempo",
+        drill: "Play 3 trainer battles focusing on single-lane pressure to feel the deck's cycle cadence.",
+        reps: "3 matches",
+      },
+      {
+        focus: "Counter-push discipline",
+        drill: "Review replays and only counter-push after a positive elixir trade to reinforce patience.",
+      },
     ],
   };
 }
@@ -38,6 +56,18 @@ const geminiExplainerSchema = z.object({
   matchupTips: z
     .array(z.object({ archetype: z.string(), tip: z.string() }))
     .max(3)
+    .optional(),
+  practicePlan: z
+    .array(
+      z
+        .object({
+          focus: z.string(),
+          drill: z.string(),
+          reps: z.string().optional(),
+        })
+        .strict(),
+    )
+    .max(4)
     .optional(),
 });
 
@@ -105,15 +135,36 @@ function normaliseExplainer(payload: GeminiExplainerPayload, fallback: GeminiExp
     .map((item) => ({ archetype: item.archetype.trim(), tip: item.tip.trim() }))
     .filter((item) => item.archetype.length > 0 && item.tip.length > 0)
     .slice(0, 3);
+  const practicePlan = (payload.practicePlan ?? [])
+    .map((item) => ({
+      focus: item.focus.trim(),
+      drill: item.drill.trim(),
+      reps: item.reps?.trim() ?? undefined,
+    }))
+    .filter((item) => item.focus.length > 0 && item.drill.length > 0)
+    .slice(0, 4);
 
   return {
     summary: summary && summary.length > 0 ? summary : fallback.summary,
     substitutions: substitutions.length > 0 ? substitutions : fallback.substitutions,
     matchupTips: matchupTips.length > 0 ? matchupTips : fallback.matchupTips,
+    practicePlan: practicePlan.length > 0 ? practicePlan : fallback.practicePlan,
   };
 }
 
-export async function generateExplainer(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): Promise<GeminiExplainer> {
+export type GeminiExplainerStreamEvent =
+  | { type: "cached"; payload: GeminiExplainer; model: "cache" }
+  | { type: "start"; model: string }
+  | { type: "delta"; rawText: string; model: string }
+  | { type: "update"; payload: GeminiExplainer; model: string }
+  | { type: "complete"; payload: GeminiExplainer; model: string }
+  | { type: "error"; error: string; fallback: GeminiExplainer };
+
+export async function* generateExplainerStream(
+  deck: DeckDefinition,
+  score: DeckScore,
+  player: PlayerProfile,
+): AsyncGenerator<GeminiExplainerStreamEvent, GeminiExplainer, void> {
   const env = getServerEnv();
   const fallback = fallbackExplainer(deck, score, player);
 
@@ -121,6 +172,7 @@ export async function generateExplainer(deck: DeckDefinition, score: DeckScore, 
     if (isDevelopment()) {
       console.warn("GEMINI_API_KEY missing. Using fallback explainer.");
     }
+    yield { type: "error", error: "Missing Gemini API key", fallback };
     return fallback;
   }
 
@@ -130,6 +182,7 @@ export async function generateExplainer(deck: DeckDefinition, score: DeckScore, 
   const cached = await cacheGet<GeminiExplainer>(cacheKey);
 
   if (cached) {
+    yield { type: "cached", payload: cached, model: "cache" };
     return cached;
   }
 
@@ -146,18 +199,31 @@ export async function generateExplainer(deck: DeckDefinition, score: DeckScore, 
   for (const modelId of candidateModels) {
     try {
       const model = client.getGenerativeModel({ model: modelId });
-      const response = await model.generateContent({
+      yield { type: "start", model: modelId };
+
+      const result = await model.generateContentStream({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { responseMimeType: "application/json" },
       });
 
-      const text = response.response.text();
+      let buffer = "";
 
-      if (!text) {
-        throw new Error("Gemini returned empty response");
+      for await (const event of result.stream) {
+        const text = event.text();
+        if (!text) {
+          continue;
+        }
+
+        buffer += text;
+        yield { type: "delta", rawText: buffer, model: modelId };
+
+        const payload = parseGeminiPayload(buffer);
+        if (payload) {
+          yield { type: "update", payload: normaliseExplainer(payload, fallback), model: modelId };
+        }
       }
 
-      const payload = parseGeminiPayload(text);
+      const payload = parseGeminiPayload(buffer);
 
       if (!payload) {
         throw new Error("Gemini response not in expected JSON format");
@@ -165,6 +231,7 @@ export async function generateExplainer(deck: DeckDefinition, score: DeckScore, 
 
       const explainer = normaliseExplainer(payload, fallback);
       await cacheSet(cacheKey, explainer, CACHE_TTL_SECONDS);
+      yield { type: "complete", payload: explainer, model: modelId };
       return explainer;
     } catch (error) {
       console.warn(`[Gemini] Model ${modelId} failed. Falling back. Reason: ${String(error)}`);
@@ -172,5 +239,30 @@ export async function generateExplainer(deck: DeckDefinition, score: DeckScore, 
   }
 
   console.warn("Gemini request failed after trying all models. Using fallback explainer.");
+  yield { type: "error", error: "Gemini request failed after trying all models.", fallback };
   return fallback;
+}
+
+export async function generateExplainer(
+  deck: DeckDefinition,
+  score: DeckScore,
+  player: PlayerProfile,
+): Promise<GeminiExplainer> {
+  const iterator = generateExplainerStream(deck, score, player);
+  let latest: GeminiExplainer | null = null;
+
+  while (true) {
+    const { value, done } = await iterator.next();
+    if (done) {
+      return value ?? latest ?? fallbackExplainer(deck, score, player);
+    }
+
+    if (value.type === "cached" || value.type === "update" || value.type === "complete") {
+      latest = value.payload;
+    }
+
+    if (value.type === "error") {
+      latest = value.fallback;
+    }
+  }
 }
