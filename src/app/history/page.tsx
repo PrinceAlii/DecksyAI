@@ -44,8 +44,8 @@ export default async function HistoryPage() {
     <div className="bg-background py-16">
       <Container className="space-y-8">
         <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
-          <Link href="/recommend">
-            <ArrowLeft className="size-4" /> Back to recommendations
+          <Link href="/">
+            <ArrowLeft className="size-4" /> Back to home
           </Link>
         </Button>
 

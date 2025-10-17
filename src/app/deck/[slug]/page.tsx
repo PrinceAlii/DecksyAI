@@ -73,9 +73,9 @@ export default async function DeckPage({
     <div className="bg-background py-16">
       <Container className="space-y-10">
         <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
-          <Link href={searchParams.sessionId ? `/recommend?sessionId=${encodeURIComponent(searchParams.sessionId)}` : "/recommend"}>
+          <Link href={searchParams.sessionId ? `/recommend?sessionId=${encodeURIComponent(searchParams.sessionId)}` : "/"}>
             <ArrowLeft className="size-4" />
-            Back to recommendations
+            {searchParams.sessionId ? "Back to recommendations" : "Back to home"}
           </Link>
         </Button>
 

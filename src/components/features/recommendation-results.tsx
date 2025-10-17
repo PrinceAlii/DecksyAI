@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -110,6 +110,15 @@ export function RecommendationResults({ sessionId, playerTag, trophyInfo, result
 
   return (
     <div className="space-y-10">
+      <div className="flex items-center justify-between">
+        <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
+          <Link href="/history">
+            <ArrowLeft className="size-4" />
+            Back to history
+          </Link>
+        </Button>
+      </div>
+
       <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="space-y-1">
           <h1 className="text-3xl font-semibold text-text">Your deck recommendations</h1>
