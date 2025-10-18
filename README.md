@@ -35,6 +35,8 @@ Create a `.env.local` file and populate the values below as needed:
 | `GEMINI_API_KEY` / `GEMINI_MODEL` | Enables Gemini explainers; falls back to deterministic copy when omitted. |
 | `DATABASE_URL` / `DIRECT_URL` | PostgreSQL connection strings for Prisma + Auth.js. |
 | `NEXTAUTH_SECRET` | Secret used to sign Auth.js tokens. Generate with `openssl rand -base64 32`. |
+| `ACCOUNT_EXPORT_ENCRYPTION_KEY` | Base64-encoded 32-byte key for encrypting account export bundles. Required in production. |
+| `ACCOUNT_EXPORT_KEY_ID` | Optional identifier for the active export key to simplify rotations. |
 | `AUTH_GITHUB_ID` / `AUTH_GITHUB_SECRET` | Enable GitHub OAuth sign-in. |
 | `RESEND_API_KEY` & `EMAIL_FROM` | Send production magic links via Resend. In development the magic link is logged when unset. |
 | `REDIS_URL` | Optional Redis cache for Clash Royale and Gemini responses. |
@@ -97,9 +99,9 @@ If you're using a managed Redis provider that exposes a TLS endpoint (for exampl
 [ioredis] Unhandled error event: Error: self-signed certificate in certificate chain
 ```
 
-Set one of the environment variables below when connecting to a `rediss://` URL to disable strict certificate verification:
+Set one of the environment variables below when connecting to a `rediss://` URL to disable strict certificate verification **during local development only**:
 
 - `REDIS_TLS_ALLOW_SELF_SIGNED=true` (existing name)
 - `REDIS_ALLOW_INSECURE_TLS=true` (alias)
 
-Security note: disabling certificate verification weakens TLS and should only be used if you understand the risk. Prefer configuring a trusted CA (for example using `NODE_EXTRA_CA_CERTS`) or using a Redis provider that presents a certificate trusted by Node.
+Security note: disabling certificate verification weakens TLS and should only be used if you understand the risk. Prefer configuring a trusted CA (for example using `NODE_EXTRA_CA_CERTS`) or using a Redis provider that presents a certificate trusted by Node. The Decksy server now refuses to start with these flags enabled outside development and logs whenever the insecure fallback is active so you can monitor usage during testing.

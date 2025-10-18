@@ -2,6 +2,8 @@ import { z } from "zod";
 
 type Env = z.infer<typeof serverEnvSchema>;
 
+const ACCOUNT_EXPORT_KEY_BYTES = 32;
+
 const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   CLASH_ROYALE_API_KEY: z.string().optional(),
@@ -40,6 +42,23 @@ const serverEnvSchema = z.object({
   NEXT_PUBLIC_POSTHOG_KEY: z.string().optional(),
   SENTRY_DSN: z.string().optional(),
   ACCOUNT_EXPORT_DIR: z.string().optional(),
+  ACCOUNT_EXPORT_ENCRYPTION_KEY: z
+    .string()
+    .optional()
+    .refine((value) => {
+      if (!value) {
+        return true;
+      }
+
+      try {
+        const decoded = Buffer.from(value, "base64");
+        return decoded.length === ACCOUNT_EXPORT_KEY_BYTES;
+      } catch (error) {
+        console.error("Failed to decode ACCOUNT_EXPORT_ENCRYPTION_KEY", error);
+        return false;
+      }
+    }, "ACCOUNT_EXPORT_ENCRYPTION_KEY must be a base64-encoded 32 byte key."),
+  ACCOUNT_EXPORT_KEY_ID: z.string().optional(),
 });
 
 let cachedEnv: Env | null = null;
@@ -95,7 +114,31 @@ export function getServerEnv(): Env {
       throw new Error("Invalid environment variables. Check server logs for details.");
     }
 
-    cachedEnv = result.data;
+    const data = result.data;
+
+    if (data.NODE_ENV === "production") {
+      if (!data.NEXTAUTH_SECRET?.trim()) {
+        throw new Error(
+          "NEXTAUTH_SECRET is required in production. Generate a strong secret and set it before starting the server.",
+        );
+      }
+
+      if (!data.ACCOUNT_EXPORT_ENCRYPTION_KEY?.trim()) {
+        throw new Error(
+          "ACCOUNT_EXPORT_ENCRYPTION_KEY is required in production to encrypt account export bundles.",
+        );
+      }
+    }
+
+    if (data.NODE_ENV !== "development") {
+      if (data.REDIS_TLS_ALLOW_SELF_SIGNED || data.REDIS_ALLOW_INSECURE_TLS) {
+        throw new Error(
+          "Insecure Redis TLS flags are only permitted during local development. Remove REDIS_TLS_ALLOW_SELF_SIGNED/REDIS_ALLOW_INSECURE_TLS before deploying.",
+        );
+      }
+    }
+
+    cachedEnv = data;
   }
 
   return cachedEnv;
