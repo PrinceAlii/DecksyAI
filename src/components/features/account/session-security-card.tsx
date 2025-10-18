@@ -2,7 +2,8 @@
 
 import { useFormState } from "react-dom";
 
-import { revokeSessionsAction, revokeSessionsInitialState } from "@/app/account/actions";
+import { revokeSessionsAction } from "@/app/account/actions";
+import { revokeSessionsInitialState } from "@/app/account/types";
 import { Button } from "@/components/ui/button";
 
 interface SessionSecurityCardProps {

@@ -9,29 +9,11 @@ import { getServerAuthSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { writeAccountExport } from "@/lib/storage/account-export";
 import { COOKIE_CONSENT_COOKIE } from "@/lib/constants";
-
-export type UpdateProfileState = {
-  status: "idle" | "success" | "error";
-  message?: string;
-};
-
-const initialState: UpdateProfileState = { status: "idle" };
-
-export type ExportAccountState = {
-  status: "idle" | "success" | "error";
-  message?: string;
-  downloadPath?: string;
-  checksum?: string;
-};
-
-const exportInitialState: ExportAccountState = { status: "idle" };
-
-export type DeleteAccountState = {
-  status: "idle" | "success" | "error";
-  message?: string;
-};
-
-const deleteInitialState: DeleteAccountState = { status: "idle" };
+import type {
+  UpdateProfileState,
+  ExportAccountState,
+  DeleteAccountState,
+} from "./types";
 
 const profileSchema = z.object({
   playerTag: z.string().max(16).optional(),
@@ -150,8 +132,6 @@ export async function updateProfileAction(
     };
   }
 }
-
-export { initialState as updateProfileInitialState };
 
 function serialiseRecord<T extends Record<string, unknown>>(record: T) {
   const next: Record<string, unknown> = { ...record };
@@ -286,8 +266,6 @@ export async function exportAccountDataAction(
   }
 }
 
-export { exportInitialState as exportAccountInitialState };
-
 export async function deleteAccountAction(
   _prevState: DeleteAccountState,
 ): Promise<DeleteAccountState> {
@@ -365,8 +343,6 @@ export async function deleteAccountAction(
   }
 }
 
-export { deleteInitialState as deleteAccountInitialState };
-
 export async function revokeSessionsAction(
   _prevState: UpdateProfileState,
 ): Promise<UpdateProfileState> {
@@ -408,5 +384,3 @@ export async function revokeSessionsAction(
     };
   }
 }
-
-export { initialState as revokeSessionsInitialState };

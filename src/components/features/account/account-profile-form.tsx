@@ -2,7 +2,8 @@
 
 import { useFormState } from "react-dom";
 
-import { updateProfileAction, updateProfileInitialState } from "@/app/account/actions";
+import { updateProfileAction } from "@/app/account/actions";
+import { updateProfileInitialState } from "@/app/account/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
