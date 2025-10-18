@@ -1,4 +1,32 @@
-# Fixes Applied - October 17, 2025
+# Fixes Applied
+
+## Latest Fixes - November 24, 2025
+
+### ✅ Unauthorized Error for Deck Analysis
+**Problem:** When clicking "Analyze" in the deck builder, users were getting an "Unauthorized" error message. The `/api/analyze/custom` endpoint required authentication for all requests, but the deck builder is a public page.
+
+**Solution Implemented:**
+1. **Updated Analysis Endpoint** (`src/app/api/analyze/custom/route.ts`)
+   - Removed authentication requirement for analysis
+   - Anyone can now get AI analysis (guest or authenticated)
+   - Analysis only saves to database for authenticated users with saved decks
+
+2. **Enhanced Analysis Modal** (`src/components/features/deck-builder/analysis-modal.tsx`)
+   - Added message: "💡 Sign in and save your deck to persist this analysis"
+   - Only shows "Save Analysis" button when user can save
+
+**User Flow:**
+- **Guest Users:** Can analyze decks, view results, but cannot save analysis
+- **Authenticated (Unsaved Deck):** Can analyze, view results, but must save deck first to persist analysis
+- **Authenticated (Saved Deck):** Can analyze, view results, and save analysis to deck record
+
+**Files Changed:**
+- `src/app/api/analyze/custom/route.ts`
+- `src/components/features/deck-builder/analysis-modal.tsx`
+
+---
+
+## Previous Fixes - October 17, 2025
 
 ## Issues Resolved
 

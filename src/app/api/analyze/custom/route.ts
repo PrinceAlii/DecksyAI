@@ -18,21 +18,14 @@ export async function POST(req: NextRequest) {
   try {
     const session = await getServerAuthSession();
 
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
-    }
-
     const body = await req.json();
     const validated = analyzeSchema.parse(body);
 
-    // Generate AI analysis
+    // Generate AI analysis (allowed for authenticated and unauthenticated users)
     const analysis = await generateCustomDeckAnalysis(validated.cards);
 
-    // If deckId provided, save analysis to database
-    if (validated.deckId && prisma) {
+    // If deckId provided and user is authenticated, save analysis to database
+    if (validated.deckId && prisma && session?.user?.id) {
       const deck = await prisma.customDeck.findUnique({
         where: { id: validated.deckId },
       });

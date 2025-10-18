@@ -227,15 +227,22 @@ export function AnalysisModal({
 
             {/* Footer */}
             {!isLoading && analysis && (
-              <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-border/60 bg-surface/95 backdrop-blur p-6">
-                <Button variant="outline" onClick={onClose}>
-                  Close
-                </Button>
-                {canSave && onSaveAnalysis && (
-                  <Button variant="primary" onClick={onSaveAnalysis}>
-                    Save Analysis
-                  </Button>
+              <div className="sticky bottom-0 flex flex-col gap-3 border-t border-border/60 bg-surface/95 backdrop-blur p-6">
+                {!canSave && (
+                  <p className="text-xs text-text-muted text-center">
+                    💡 Sign in and save your deck to persist this analysis
+                  </p>
                 )}
+                <div className="flex items-center justify-end gap-3">
+                  <Button variant="outline" onClick={onClose}>
+                    Close
+                  </Button>
+                  {canSave && onSaveAnalysis && (
+                    <Button variant="primary" onClick={onSaveAnalysis}>
+                      Save Analysis
+                    </Button>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
