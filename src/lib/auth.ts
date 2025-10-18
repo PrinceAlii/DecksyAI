@@ -3,6 +3,7 @@ import type { NextAuthOptions } from "next-auth";
 import { getServerSession } from "next-auth";
 import EmailProvider from "next-auth/providers/email";
 import GithubProvider from "next-auth/providers/github";
+import { Resend } from "resend";
 
 import { recordAuditLog } from "@/lib/audit-log";
 import { getServerEnv, isDevelopment } from "@/lib/env";
@@ -22,31 +23,24 @@ function createEmailProvider(env: ReturnType<typeof getServerEnv>) {
         return;
       }
 
-      const response = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${env.RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.ai>",
-          to: identifier,
-          subject: "Your Decksy AI login link",
-          html: `
-            <div style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 16px; background-color: #0B0F19; color: #E6EAF2;">
-              <h1 style="margin-bottom: 12px;">Sign in to Decksy AI</h1>
-              <p style="margin-bottom: 16px;">Click the secure button below to finish signing in. This link expires in 10 minutes.</p>
-              <p style="margin-bottom: 24px;"><a href="${url}" style="display: inline-block; padding: 12px 18px; border-radius: 8px; background-color: #5B8CFF; color: #0B0F19; text-decoration: none; font-weight: 600;">Continue to Decksy AI</a></p>
-              <p style="margin-bottom: 8px;">If you did not request this email you can safely ignore it.</p>
-            </div>
-          `,
-          text: `Sign in to Decksy AI using the link below.\n\n${url}\n\nThis link expires in 10 minutes.`,
-        }),
+      const resend = new Resend(env.RESEND_API_KEY);
+      const { error } = await resend.emails.send({
+        from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.ai>",
+        to: identifier,
+        subject: "Your Decksy AI login link",
+        html: `
+          <div style="font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; padding: 16px; background-color: #0B0F19; color: #E6EAF2;">
+            <h1 style="margin-bottom: 12px;">Sign in to Decksy AI</h1>
+            <p style="margin-bottom: 16px;">Click the secure button below to finish signing in. This link expires in 10 minutes.</p>
+            <p style="margin-bottom: 24px;"><a href="${url}" style="display: inline-block; padding: 12px 18px; border-radius: 8px; background-color: #5B8CFF; color: #0B0F19; text-decoration: none; font-weight: 600;">Continue to Decksy AI</a></p>
+            <p style="margin-bottom: 8px;">If you did not request this email you can safely ignore it.</p>
+          </div>
+        `,
+        text: `Sign in to Decksy AI using the link below.\n\n${url}\n\nThis link expires in 10 minutes.`,
       });
 
-      if (!response.ok) {
-        const message = await response.text();
-        throw new Error(`Failed to send verification email: ${message}`);
+      if (error) {
+        throw new Error(`Failed to send verification email: ${error.message ?? error}`);
       }
     },
   });
