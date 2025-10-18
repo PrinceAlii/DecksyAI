@@ -206,8 +206,13 @@ export async function GET(request: NextRequest) {
   }
 
   const recommendation = await prisma.recommendation.findUnique({ where: { sessionId } });
+
+  if (!recommendation) {
+    return NextResponse.json(errorResponseSchema.parse({ error: "Recommendation not found" }), { status: 404 });
+  }
+
   const explainers = await prisma.explainer.findMany({
-    where: { deck: { slug: deckSlug }, recommendationId: recommendation?.id },
+    where: { deck: { slug: deckSlug }, recommendationId: recommendation.id },
   });
   const normalisedExplainers = explainers
     .map((entry) => ({
