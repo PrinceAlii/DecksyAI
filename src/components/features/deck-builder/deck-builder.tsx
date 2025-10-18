@@ -279,11 +279,11 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
 
     try {
       const normalizedTag = normalizePlayerTag(playerTag);
-      const response = await fetch(`/api/player?tag=${encodeURIComponent(normalizedTag)}`);
+      const response = await fetch(`/api/player/${encodeURIComponent(normalizedTag)}`);
       
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.message || "Failed to load player data");
+        throw new Error(error.error || "Failed to load player data");
       }
 
       const data = await response.json();
