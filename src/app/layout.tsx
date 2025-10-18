@@ -19,12 +19,14 @@ export default function RootLayout({
     <html lang="en" className="h-full" suppressHydrationWarning>
       <body
         className={cn(
-          "min-h-full bg-background font-sans text-text antialiased",
+          "relative min-h-full bg-background font-sans text-text antialiased",
           "selection:bg-primary/20 selection:text-text"
         )}
       >
-        {children}
-        <CookieConsentBanner />
+        <div className="relative z-10 flex min-h-full flex-col">
+          {children}
+          <CookieConsentBanner />
+        </div>
       </body>
     </html>
   );
