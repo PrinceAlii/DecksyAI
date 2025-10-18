@@ -51,7 +51,7 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
-import { persistRecommendation } from "@/app/api/recommend/route";
+import { persistRecommendation } from "@/app/api/recommend/persist";
 import { prisma } from "@/lib/prisma";
 
 describe("persistRecommendation", () => {
@@ -78,8 +78,8 @@ describe("persistRecommendation", () => {
       userId: "user-123",
     };
 
-    const breakdown = [];
-    const enrichedDecks = [];
+    const breakdown: unknown[] = [];
+    const enrichedDecks: unknown[] = [];
 
     await persistRecommendation("session-123", payload, breakdown, enrichedDecks);
 

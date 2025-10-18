@@ -40,7 +40,7 @@ export function resolveCardArtSlug(cardKey: string): string {
 }
 
 /**
- * Get card art URL - tries local /cards/ directory first, falls back to external CDN
+ * Get card art URL - uses external CDN by default for reliability
  */
 export function getCardArtUrl(card: Pick<DeckCard, "key" | "image">): string {
   // If card has explicit image path, use it
@@ -48,13 +48,14 @@ export function getCardArtUrl(card: Pick<DeckCard, "key" | "image">): string {
     return card.image;
   }
 
-  // Try local image first (preferred for production)
-  const localSlug = card.key.toLowerCase();
-  return `/cards/${localSlug}.png`;
+  // Use external CDN (royaleapi.github.io) for all cards
+  const slug = resolveCardArtSlug(card.key);
+  return `${CARD_ART_BASE_URL}${slug}.png`;
 }
 
 /**
  * Get external CDN URL as fallback
+ * @deprecated Use getCardArtUrl instead - it now uses CDN by default
  */
 export function getExternalCardArtUrl(card: Pick<DeckCard, "key">): string {
   const slug = resolveCardArtSlug(card.key);
