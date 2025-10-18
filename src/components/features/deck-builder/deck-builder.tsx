@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getCardArtUrl, CARD_ART_PLACEHOLDER } from "@/lib/data/card-art";
 import { normalizePlayerTag } from "@/lib/player-tag";
+import { UpgradeCalculatorModal } from "@/components/features/deck-builder/upgrade-calculator-modal";
 import {
   detectDeckArchetype,
   getArchetypeColor,
@@ -160,6 +161,9 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
   // DECK-103d: Export dropdown state
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+  
+  // DECK-104b: Upgrade Calculator state
+  const [showUpgradeCalculator, setShowUpgradeCalculator] = useState(false);
 
   // Load recent cards on mount
   useEffect(() => {
@@ -510,6 +514,17 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
                 </Button>
               )}
               {deckComplete && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setShowUpgradeCalculator(true)} 
+                  className="gap-2"
+                >
+                  <TrendingUp className="size-4" />
+                  Upgrade Cost
+                </Button>
+              )}
+              {deckComplete && (
                 <Button variant="primary" size="sm" onClick={handleSaveDeck} className="gap-2">
                   <Save className="size-4" />
                   Save Deck
@@ -767,6 +782,13 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
           </CardContent>
         </Card>
       )}
+      
+      {/* DECK-104b: Upgrade Calculator Modal */}
+      <UpgradeCalculatorModal
+        isOpen={showUpgradeCalculator}
+        onClose={() => setShowUpgradeCalculator(false)}
+        cards={selectedCards}
+      />
     </div>
   );
 }

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Pencil, Trash2, Play, Sparkles, Calendar, Zap } from "lucide-react";
+import { Pencil, Trash2, Play, Sparkles, Calendar, Zap, GitCompare } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -26,6 +26,7 @@ interface SavedDeckCardProps {
   onEdit: (deck: SavedDeck) => void;
   onDelete: (deck: SavedDeck) => void;
   onAnalyze: (deck: SavedDeck) => void;
+  onCompare?: (deck: SavedDeck) => void;
 }
 
 // Helper to calculate average elixir (simplified - you can import from actual card data)
@@ -62,7 +63,7 @@ function formatRelativeDate(dateString: string): string {
   return `${Math.floor(diffDays / 365)} years ago`;
 }
 
-export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze }: SavedDeckCardProps) {
+export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze, onCompare }: SavedDeckCardProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
   
   const avgElixir = calculateAvgElixir(deck.cards);
@@ -155,6 +156,17 @@ export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze }: Sav
             <Sparkles className="size-3.5" />
             {hasAnalysis ? "View" : "Analyze"}
           </Button>
+          {onCompare && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onCompare(deck)}
+              className="gap-2"
+            >
+              <GitCompare className="size-3.5" />
+              Compare
+            </Button>
+          )}
           <Button
             variant="ghost"
             size="sm"
