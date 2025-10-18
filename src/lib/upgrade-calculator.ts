@@ -153,13 +153,17 @@ export function analyzeDeckUpgrades(cards: CardData[]): DeckUpgradeAnalysis {
   cardUpgrades.sort((a, b) => b.priority - a.priority);
 
   // Find most expensive and cheapest upgrades
-  const mostExpensiveCard = cardUpgrades.reduce((max, card) =>
-    card.goldNeeded > max.goldNeeded ? card : max
-  ).cardName;
+  const mostExpensiveCard = cardUpgrades.length > 0
+    ? cardUpgrades.reduce((max, card) =>
+        card.goldNeeded > max.goldNeeded ? card : max
+      ).cardName
+    : "N/A";
 
-  const cheapestUpgrade = cardUpgrades.reduce((min, card) =>
-    card.goldNeeded > 0 && card.goldNeeded < min.goldNeeded ? card : min
-  ).cardName;
+  const cheapestUpgrade = cardUpgrades.length > 0
+    ? cardUpgrades.reduce((min, card) =>
+        card.goldNeeded > 0 && card.goldNeeded < min.goldNeeded ? card : min
+      ).cardName
+    : "N/A";
 
   // Estimate days (assuming 3000 gold per day from various sources)
   const estimatedDays = Math.ceil(totalGold / 3000);
