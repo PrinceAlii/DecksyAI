@@ -1,6 +1,23 @@
-<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="64" height="64" rx="16" fill="#0B0F19"/>
-  <path d="M20 44L32 20L44 44H20Z" fill="#5B8CFF"/>
-  <path d="M28 36L32 28L36 36H28Z" fill="#22D3EE"/>
-  <circle cx="32" cy="24" r="4" fill="#E6EAF2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="Decksy AI logo">
+  <rect width="64" height="64" rx="12" fill="#0B0F19"/>
+
+  <!-- stylized deck + D monogram using project colors -->
+  <g transform="translate(8 8)">
+    <!-- shadow card -->
+    <rect x="6" y="8" width="40" height="48" rx="6" fill="#07101A" opacity="0.6" />
+
+    <!-- main card -->
+    <rect x="2" y="4" width="40" height="48" rx="6" fill="#101623" />
+
+    <!-- diagonal stripe representing a deck -->
+    <path d="M8 14 L34 14 L28 42 L4 42 Z" fill="#5B8CFF" />
+
+    <!-- accent inner chevron -->
+    <path d="M12 20 L28 20 L24 36 L10 36 Z" fill="#22D3EE" />
+
+    <!-- D monogram circle (badge) -->
+    <circle cx="30" cy="8" r="6" fill="#E6EAF2" />
+    <path d="M28 6 C30 6 32 7 32 9 C32 11 30 12 28 12 L28 6 Z" fill="#0B0F19" />
+  </g>
+
 </svg>

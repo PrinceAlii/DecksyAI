@@ -10,6 +10,16 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://decksy.ai")
 };
 
+// Add common icons so Next/HTML will include favicons and touch icons.
+metadata.icons = {
+  icon: [
+    { url: "/logo.svg", type: "image/svg+xml" },
+    { url: "/favicon-32.png", sizes: "32x32", type: "image/png" },
+    { url: "/favicon-16.png", sizes: "16x16", type: "image/png" }
+  ],
+  apple: [{ url: "/logo.svg", sizes: "180x180", type: "image/svg+xml" }]
+};
+
 export default function RootLayout({
   children
 }: Readonly<{
