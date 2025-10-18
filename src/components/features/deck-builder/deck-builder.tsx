@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Sparkles, Trash2, Save, Share2, TrendingUp, Search, Loader2, User } from "lucide-react";
+import { Sparkles, Trash2, Save, Share2, TrendingUp, Search, Loader2, User, X, Check, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +11,16 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getCardArtUrl, CARD_ART_PLACEHOLDER } from "@/lib/data/card-art";
 import { normalizePlayerTag } from "@/lib/player-tag";
+import {
+  detectDeckArchetype,
+  getArchetypeColor,
+  getRecentCards,
+  addToRecentCards,
+  clearRecentCards,
+  exportDeckAsText,
+  exportDeckAsMarkdown,
+  copyToClipboard,
+} from "@/lib/deck-builder-utils";
 
 interface CardData {
   key: string;
@@ -140,6 +150,21 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
   const [loadedPlayerData, setLoadedPlayerData] = useState<CardData[] | null>(null);
   const [deckName, setDeckName] = useState(initialDeckName || "");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+  
+  // DECK-103b: Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  
+  // DECK-103c: Recent cards state
+  const [recentCardKeys, setRecentCardKeys] = useState<string[]>([]);
+  
+  // DECK-103d: Export dropdown state
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
+
+  // Load recent cards on mount
+  useEffect(() => {
+    setRecentCardKeys(getRecentCards());
+  }, []);
 
   // Load initial cards if provided
   useMemo(() => {
@@ -160,7 +185,7 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
     });
   }, [playerCards, loadedPlayerData]);
 
-  // Filter cards based on category and ownership
+  // Filter cards based on category, ownership, and search
   const filteredCards = useMemo(() => {
     let cards = availableCards;
     
@@ -172,21 +197,39 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
       cards = cards.filter(card => card.owned);
     }
     
+    // DECK-103b: Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      cards = cards.filter(card => 
+        card.name.toLowerCase().includes(query) ||
+        card.key.toLowerCase().includes(query)
+      );
+    }
+    
     return cards;
-  }, [availableCards, filterCategory, showOwnedOnly]);
+  }, [availableCards, filterCategory, showOwnedOnly, searchQuery]);
 
   // Calculate deck stats
   const deckStats = useMemo(() => {
     if (selectedCards.length === 0) {
-      return { avgElixir: 0, total: 0 };
+      return { avgElixir: 0, total: 0, archetype: "" };
     }
     
     const totalElixir = selectedCards.reduce((sum, card) => sum + card.elixir, 0);
     return {
       avgElixir: totalElixir / selectedCards.length,
       total: selectedCards.length,
+      archetype: detectDeckArchetype(selectedCards), // DECK-103a
     };
   }, [selectedCards]);
+  
+  // DECK-103c: Get recent cards that aren't already selected
+  const recentCards = useMemo(() => {
+    return ALL_CARDS.filter(card => 
+      recentCardKeys.includes(card.key) && 
+      !selectedCards.some(sc => sc.key === card.key)
+    ).slice(0, 12);
+  }, [recentCardKeys, selectedCards]);
 
   const handleCardClick = (card: CardData) => {
     if (selectedCards.find(c => c.key === card.key)) {
@@ -196,6 +239,9 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
       // Add card (max 8)
       if (selectedCards.length < 8) {
         setSelectedCards([...selectedCards, card]);
+        // DECK-103c: Track in recent cards
+        addToRecentCards(card.key);
+        setRecentCardKeys(getRecentCards());
       }
     }
   };
@@ -268,6 +314,26 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
     if (onAnalyzeDeck && selectedCards.length === 8) {
       onAnalyzeDeck(selectedCards);
     }
+  };
+
+  // DECK-103d: Export handlers
+  const handleExport = async (format: "text" | "markdown") => {
+    let content: string;
+    if (format === "text") {
+      content = exportDeckAsText(selectedCards);
+    } else {
+      content = exportDeckAsMarkdown(selectedCards, deckName || "My Deck");
+    }
+    
+    const success = await copyToClipboard(content);
+    if (success) {
+      setCopyFeedback(format === "text" ? "Copied as text!" : "Copied as markdown!");
+      setTimeout(() => setCopyFeedback(null), 2000);
+    } else {
+      setCopyFeedback("Failed to copy");
+      setTimeout(() => setCopyFeedback(null), 2000);
+    }
+    setShowExportMenu(false);
   };
 
   const isCardSelected = (cardKey: string) => {
@@ -374,8 +440,19 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
-              <h2 className="text-lg font-semibold text-text">Your Deck</h2>
-              <p className="text-sm text-text-muted">
+              <div className="flex items-center gap-3">
+                <h2 className="text-lg font-semibold text-text">Your Deck</h2>
+                {/* DECK-103a: Archetype Badge */}
+                {deckStats.archetype && (
+                  <Badge 
+                    variant="outline" 
+                    className={cn("text-xs", getArchetypeColor(deckStats.archetype))}
+                  >
+                    {deckStats.archetype}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-sm text-text-muted mt-1">
                 {selectedCards.length}/8 cards • {deckStats.avgElixir.toFixed(1)} avg elixir
               </p>
             </div>
@@ -385,6 +462,46 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
                   <Trash2 className="size-4" />
                   Clear
                 </Button>
+              )}
+              {/* DECK-103d: Export Button */}
+              {deckComplete && (
+                <div className="relative">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setShowExportMenu(!showExportMenu)} 
+                    className="gap-2"
+                  >
+                    <Share2 className="size-4" />
+                    Share
+                  </Button>
+                  {showExportMenu && (
+                    <div className="absolute right-0 top-full mt-2 w-48 rounded-lg border border-border/60 bg-surface shadow-xl z-10">
+                      <div className="p-2 space-y-1">
+                        <button
+                          onClick={() => handleExport("text")}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-primary/10 rounded-md transition"
+                        >
+                          <Copy className="size-4" />
+                          Copy as text
+                        </button>
+                        <button
+                          onClick={() => handleExport("markdown")}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-primary/10 rounded-md transition"
+                        >
+                          <Copy className="size-4" />
+                          Copy as markdown
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  {copyFeedback && (
+                    <div className="absolute right-0 top-full mt-2 px-3 py-2 bg-accent text-background text-xs font-medium rounded-md shadow-lg whitespace-nowrap">
+                      <Check className="size-3 inline mr-1" />
+                      {copyFeedback}
+                    </div>
+                  )}
+                </div>
               )}
               {deckComplete && onAnalyzeDeck && (
                 <Button variant="outline" size="sm" onClick={handleAnalyze} className="gap-2">
@@ -442,9 +559,80 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
         </CardContent>
       </Card>
 
-      {/* Filters */}
+      {/* DECK-103c: Recently Used Cards */}
+      {recentCards.length > 0 && canAddMoreCards && (
+        <Card className="border-border/60 bg-surface/80">
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-semibold text-text">Recently Used</h3>
+                <p className="text-xs text-text-muted">Quick-add cards from your recent selections</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  clearRecentCards();
+                  setRecentCardKeys([]);
+                }}
+                className="text-xs text-text-muted hover:text-text"
+              >
+                Clear
+              </Button>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {recentCards.map((card) => (
+                <div
+                  key={card.key}
+                  onClick={() => handleCardClick(card)}
+                  className="relative flex-shrink-0 w-16 cursor-pointer group"
+                >
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-md border border-border/40 bg-surface group-hover:border-primary group-hover:shadow-lg group-hover:shadow-primary/20 transition">
+                    <Image
+                      src={getCardArtUrl(card)}
+                      alt={card.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  </div>
+                  <p className="text-xs text-center text-text-muted mt-1 line-clamp-1">{card.name}</p>
+                  <Badge variant="secondary" className="absolute top-1 right-1 text-xs">
+                    {card.elixir}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* DECK-103b: Search Bar + Filters */}
       <Card className="border-border/60 bg-surface/80">
         <CardContent className="p-6">
+          {/* Search Bar */}
+          <div className="mb-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-text-muted" />
+              <Input
+                placeholder="Search cards by name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 pr-10"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text"
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Filters */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex flex-wrap gap-2">
               <Button
@@ -493,7 +681,22 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
             </p>
           </div>
 
-          <div className="grid grid-cols-6 gap-3 md:grid-cols-8 lg:grid-cols-10">
+          {/* DECK-103b: No search results */}
+          {filteredCards.length === 0 && searchQuery && (
+            <div className="text-center py-12">
+              <Search className="size-12 text-text-muted mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-text mb-2">No cards found</h3>
+              <p className="text-sm text-text-muted mb-4">
+                No cards match &ldquo;{searchQuery}&rdquo;
+              </p>
+              <Button variant="outline" onClick={() => setSearchQuery("")}>
+                Clear search
+              </Button>
+            </div>
+          )}
+
+          {filteredCards.length > 0 && (
+            <div className="grid grid-cols-6 gap-3 md:grid-cols-8 lg:grid-cols-10">
             {filteredCards.map((card) => {
               const selected = isCardSelected(card.key);
               const disabled = !canAddMoreCards && !selected;
@@ -543,7 +746,8 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
                 </div>
               );
             })}
-          </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
