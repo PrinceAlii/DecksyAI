@@ -1,6 +1,6 @@
 import type { DeckCard } from "./deck-catalog";
 
-export const CARD_ART_BASE_URL = "https://royaleapi.github.io/cr-api-assets/cards-256/";
+export const CARD_ART_BASE_URL = "https://royaleapi.github.io/cr-api-assets/cards/";
 export const CARD_ART_FALLBACK = "/cards/fallback.svg";
 export const CARD_ART_PLACEHOLDER = "/cards/placeholder.svg";
 
@@ -33,6 +33,7 @@ export const CARD_ART_OVERRIDES: Record<string, string> = {
   electro_giant: "electro-giant",
   electro_dragon: "electro-dragon",
   battle_healer: "battle-healer",
+  wall_breakers: "wall-breakers",
 };
 
 export function resolveCardArtSlug(cardKey: string): string {

@@ -217,6 +217,7 @@ export function PlayerOnboarding() {
               autoCapitalize="characters"
               autoCorrect="off"
               spellCheck={false}
+              maxLength={8}
               aria-invalid={showInlineValidation || Boolean(error)}
               aria-describedby={[
                 "player-tag-guidance",

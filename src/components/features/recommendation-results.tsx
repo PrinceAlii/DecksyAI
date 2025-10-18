@@ -12,7 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { DeckCard } from "@/lib/data/deck-catalog";
-import { CARD_ART_PLACEHOLDER, getCardArtUrl, getExternalCardArtUrl } from "@/lib/data/card-art";
+import { CARD_ART_PLACEHOLDER, getCardArtUrl } from "@/lib/data/card-art";
 import type { RecommendationDeckResult } from "@/lib/types/recommendation";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -25,19 +25,9 @@ interface RecommendationResultsProps {
 }
 
 function DeckCardTile({ card }: { card: DeckCard }) {
-  const [errorCount, setErrorCount] = useState(0);
+  const [imgError, setImgError] = useState(false);
   
-  // Try local first, then external CDN, then placeholder
-  const getImageSrc = () => {
-    if (errorCount === 0) {
-      return getCardArtUrl(card);
-    } else if (errorCount === 1) {
-      return getExternalCardArtUrl(card);
-    }
-    return CARD_ART_PLACEHOLDER;
-  };
-
-  const imageSrc = getImageSrc();
+  const imageSrc = imgError ? CARD_ART_PLACEHOLDER : getCardArtUrl(card);
 
   return (
     <div className="flex flex-col items-center gap-2 rounded-lg border border-border/60 bg-background/80 p-3 text-center transition hover:border-primary/60 hover:shadow-lg hover:shadow-primary/5">
@@ -49,12 +39,7 @@ function DeckCardTile({ card }: { card: DeckCard }) {
           sizes="(max-width: 640px) 40vw, (max-width: 1024px) 20vw, 160px"
           className="object-cover"
           unoptimized
-          onError={() => {
-            // Try next fallback
-            if (errorCount < 2) {
-              setErrorCount(errorCount + 1);
-            }
-          }}
+          onError={() => setImgError(true)}
         />
       </div>
       <div className="space-y-1">
