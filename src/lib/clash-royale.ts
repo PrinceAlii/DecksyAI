@@ -6,7 +6,14 @@ interface ClashRoyalePlayerResponse {
   tag: string;
   name: string;
   trophies: number;
-  currentArena: { name: string };
+  bestTrophies?: number;
+  currentArena?: { name: string; id?: number };
+  arena?: { name: string; id?: number };
+  currentPathOfLegendSeasonResult?: {
+    leagueNumber?: number;
+    trophies?: number;
+    rank?: number;
+  };
   cards: { name: string; id: number; level: number; maxLevel: number; key?: string }[];
 }
 
@@ -51,6 +58,47 @@ const toKey = (name?: string | null): string | null => {
   return cleaned.length > 0 ? cleaned : null;
 };
 
+// Determine arena name based on trophy count
+// Based on Clash Royale's current arena system (as of June 2025)
+// Source: https://clashroyale.fandom.com/wiki/Arenas
+// Note: The API may not always return arena names for high-trophy players,
+// so we calculate based on trophy ranges as fallback
+const getArenaName = (trophies: number): string => {
+  // Seasonal Arenas (10,000+)
+  if (trophies >= 15000) return "Seasonal Arena 5";
+  if (trophies >= 13500) return "Seasonal Arena 4";
+  if (trophies >= 12000) return "Seasonal Arena 3";
+  if (trophies >= 11000) return "Seasonal Arena 2";
+  if (trophies >= 10000) return "Seasonal Arena 1";
+  
+  // Regular Arenas
+  if (trophies >= 9500) return "Legendary Arena";      // Arena 24
+  if (trophies >= 9000) return "Valkalla";             // Arena 23
+  if (trophies >= 8500) return "PANCAKES!";            // Arena 22
+  if (trophies >= 8000) return "Clash Fest";           // Arena 21
+  if (trophies >= 7500) return "Boot Camp";            // Arena 20
+  if (trophies >= 7000) return "Dragon Spa";           // Arena 19
+  if (trophies >= 6500) return "Silent Sanctuary";     // Arena 18
+  if (trophies >= 6000) return "Royal Crypt";          // Arena 17
+  if (trophies >= 5500) return "Executioner's Kitchen"; // Arena 16
+  if (trophies >= 5000) return "Miner's Mine";         // Arena 15
+  if (trophies >= 4600) return "Serenity Peak";        // Arena 14
+  if (trophies >= 4200) return "Rascal's Hideout";     // Arena 13
+  if (trophies >= 3800) return "Spooky Town";          // Arena 12
+  if (trophies >= 3400) return "Electro Valley";       // Arena 11
+  if (trophies >= 3000) return "Hog Mountain";         // Arena 10
+  if (trophies >= 2600) return "Jungle Arena";         // Arena 9
+  if (trophies >= 2300) return "Frozen Peak";          // Arena 8
+  if (trophies >= 2000) return "Royal Arena";          // Arena 7
+  if (trophies >= 1600) return "P.E.K.K.A's Playhouse"; // Arena 6
+  if (trophies >= 1300) return "Builder's Workshop";   // Arena 5
+  if (trophies >= 1000) return "Spell Valley";         // Arena 4
+  if (trophies >= 600) return "Barbarian Bowl";        // Arena 3
+  if (trophies >= 300) return "Bone Pit";              // Arena 2
+  if (trophies >= 0) return "Goblin Stadium";          // Arena 1
+  return "Training Camp";
+};
+
 export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
   const cacheKey = `player:${tag}`;
   const cached = await cacheGet<PlayerProfile>(cacheKey);
@@ -75,11 +123,18 @@ export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
     }
 
     const data = (await response.json()) as ClashRoyalePlayerResponse;
+    
+    // Determine arena: prefer API-provided arena, fallback to trophy-based calculation
+    const arenaName = 
+      data.currentArena?.name || 
+      data.arena?.name || 
+      getArenaName(data.trophies);
+    
     const profile: PlayerProfile = {
       tag: data.tag,
       name: data.name,
       trophies: data.trophies,
-      arena: data.currentArena?.name ?? "Unknown Arena",
+      arena: arenaName,
       collection: (data.cards ?? [])
         .flatMap((card) => {
           const key = card.key ?? toKey(card.name);
