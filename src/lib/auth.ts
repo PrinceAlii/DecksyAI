@@ -13,7 +13,7 @@ type AuthOptionsResult = NextAuthOptions | null;
 
 function createEmailProvider(env: ReturnType<typeof getServerEnv>) {
   return EmailProvider({
-    from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.ai>",
+    from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.dev>",
     maxAge: 10 * 60, // 10 minutes
     async sendVerificationRequest({ identifier, url }) {
       if (!env.RESEND_API_KEY) {
@@ -25,7 +25,7 @@ function createEmailProvider(env: ReturnType<typeof getServerEnv>) {
 
       const resend = new Resend(env.RESEND_API_KEY);
       const { error } = await resend.emails.send({
-        from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.ai>",
+        from: env.EMAIL_FROM ?? "Decksy AI <login@decksy.dev>",
         to: identifier,
         subject: "Your Decksy AI login link",
         html: `

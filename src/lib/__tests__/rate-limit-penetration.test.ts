@@ -3,7 +3,7 @@ import { describe, expect, test } from "vitest";
 import { enforceRateLimit } from "@/lib/rate-limit";
 
 function createRequest(ip: string) {
-  return new Request("https://decksy.ai/api/test", {
+  return new Request("https://decksy.dev/api/test", {
     headers: {
       "x-forwarded-for": ip,
       "user-agent": "vitest-penetration-test",

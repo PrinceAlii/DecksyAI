@@ -26,7 +26,7 @@ const sections = [
           "Signed-in players can export or delete their account data from the account page whenever they need.",
           "You can delete recommendation history at any time from the history page.",
           "Use the cookie banner (or revisit this page) to update your analytics consent whenever you change your mind.",
-          "Contact privacy@decksy.ai if you need help - we usually respond within 7 days.",
+          "Contact privacy@decksy.dev if you need help - we usually respond within 7 days.",
         ],
       },
   {
@@ -67,8 +67,8 @@ export default function PrivacyPage() {
         <footer className="space-y-2 text-sm text-text-muted">
           <p>
             Need something else? Email us at {" "}
-            <Link href="mailto:privacy@decksy.ai" className="text-text underline underline-offset-2">
-              privacy@decksy.ai
+            <Link href="mailto:privacy@decksy.dev" className="text-text underline underline-offset-2">
+              privacy@decksy.dev
             </Link>{" "}
             and we&apos;ll help you out.
           </p>

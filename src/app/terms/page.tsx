@@ -49,8 +49,8 @@ export default function TermsPage() {
           <h2 className="text-xl font-semibold text-text">Contact</h2>
           <p className="text-sm text-text-muted">
             For support or questions about these terms, contact us at {" "}
-            <Link href="mailto:support@decksy.ai" className="text-text underline underline-offset-2">
-              support@decksy.ai
+            <Link href="mailto:support@decksy.dev" className="text-text underline underline-offset-2">
+              support@decksy.dev
             </Link>
             .
           </p>

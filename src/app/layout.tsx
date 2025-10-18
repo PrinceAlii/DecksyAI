@@ -7,7 +7,7 @@ export const metadata: Metadata = {
   title: "Decksy AI",
   description:
     "Personalized Clash Royale deck recommendations, explainers, and coaching built with AI.",
-  metadataBase: new URL("https://decksy.ai")
+  metadataBase: new URL("https://decksy.dev")
 };
 
 // Add common icons so Next/HTML will include favicons and touch icons.

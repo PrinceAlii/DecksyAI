@@ -40,19 +40,28 @@ export function getRedis(): Redis | null {
     REDIS_TLS_ALLOW_SELF_SIGNED || REDIS_ALLOW_INSECURE_TLS || isDevelopment()
   );
 
-  if (isTls && allowInsecure) {
-    if ((REDIS_TLS_ALLOW_SELF_SIGNED || REDIS_ALLOW_INSECURE_TLS) && !insecureRedisWarningEmitted) {
-      console.warn(
-        "[redis] Insecure TLS verification disabled via REDIS_TLS_ALLOW_SELF_SIGNED/REDIS_ALLOW_INSECURE_TLS. Use only in local development and monitor deployments closely.",
-      );
-      insecureRedisWarningEmitted = true;
-    }
+  if (isTls) {
+    if (allowInsecure) {
+      if ((REDIS_TLS_ALLOW_SELF_SIGNED || REDIS_ALLOW_INSECURE_TLS) && !insecureRedisWarningEmitted) {
+        console.warn(
+          "[redis] Insecure TLS verification disabled via REDIS_TLS_ALLOW_SELF_SIGNED/REDIS_ALLOW_INSECURE_TLS. Use only in local development and monitor deployments closely.",
+        );
+        insecureRedisWarningEmitted = true;
+      }
 
-    // Note: disabling rejectUnauthorized weakens TLS verification. Use only
-    // when you understand the security implications (e.g., quick Heroku
-    // workaround). Prefer providing a proper CA when possible.
-    // ioredis types are a bit loose here; cast to any to avoid TS complaints.
-    (redisOptions as any).tls = { rejectUnauthorized: false };
+      // Note: disabling rejectUnauthorized weakens TLS verification. Use only
+      // when you understand the security implications (e.g., quick Heroku
+      // workaround). Prefer providing a proper CA when possible.
+      // ioredis types are a bit loose here; cast to any to avoid TS complaints.
+      (redisOptions as any).tls = { rejectUnauthorized: false };
+    } else {
+      // In production (Heroku), use proper TLS with certificate verification
+      // This is the secure default for Heroku Redis addon
+      (redisOptions as any).tls = {
+        rejectUnauthorized: true,
+        // Heroku Redis uses valid certificates, no need to disable verification
+      };
+    }
   }
 
   client = new Redis(REDIS_URL, redisOptions as any);

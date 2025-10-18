@@ -105,14 +105,14 @@ export default async function LoginPage({
             <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/10 p-4 text-sm text-text">
               <ShieldCheck className="size-5 text-primary" />
               <p className="text-sm">
-                Tip: add <span className="font-semibold">login@decksy.ai</span> to your contacts so the magic link never ends up
+                Tip: add <span className="font-semibold">login@decksy.dev</span> to your contacts so the magic link never ends up
                 in spam.
               </p>
             </div>
             <p>
               Need help? Email {" "}
-              <Link href="mailto:support@decksy.ai" className="text-text underline underline-offset-2">
-                support@decksy.ai
+              <Link href="mailto:support@decksy.dev" className="text-text underline underline-offset-2">
+                support@decksy.dev
               </Link>{" "}
               and we&apos;ll get you signed in.
             </p>
