@@ -1,6 +1,6 @@
-# Decksy AI — Combined Agent Documentation
+# Decksy - Combined Agent Documentation
 
-> **Mission:** Help Clash Royale players pick decks that fit their **cards, trophies, and playstyle**, then coach them to win more—using Clash Royale API data + an AI explainer (Google Gemini).
+> **Mission:** Help Clash Royale players pick decks that fit their **cards, trophies, and playstyle**, then coach them to win more - using Clash Royale API data + an AI explainer (Google Gemini).
 
 ---
 

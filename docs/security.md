@@ -4,10 +4,10 @@ _Last updated: 27 March 2025_
 
 ## Mission-critical assets
 
-- **Player identity data** — authenticated user profiles, linked OAuth accounts, and Clash Royale player tags.
-- **Recommendation history** — personalised deck suggestions, AI explainers, and feedback notes.
-- **Operational infrastructure** — Prisma/Postgres, Redis token buckets, Gemini API credentials, and exported account bundles.
-- **Session integrity** — Auth.js sessions, magic-link flows, and consent cookies that gate optional analytics.
+- **Player identity data** - authenticated user profiles, linked OAuth accounts, and Clash Royale player tags.
+- **Recommendation history** - personalised deck suggestions, AI explainers, and feedback notes.
+- **Operational infrastructure** - Prisma/Postgres, Redis token buckets, Gemini API credentials, and exported account bundles.
+- **Session integrity** - Auth.js sessions, magic-link flows, and consent cookies that gate optional analytics.
 
 ## Trust boundaries & threat agents
 
@@ -35,7 +35,7 @@ Methodology:
 2. Verified lockout behaviour (HTTP 429 equivalent) triggers after exceeding the configured limit.
 3. Confirmed retry metadata surfaces via `RateLimitState` to power headers like `Retry-After`.
 
-The automated test harness lives in `src/lib/__tests__/rate-limit-penetration.test.ts` and runs with `npm test`. Latest run: **pass** — the limiter blocks the fourth burst request and reports `retryAfterMs` > 0, demonstrating protection against short-lived floods.
+The automated test harness lives in `src/lib/__tests__/rate-limit-penetration.test.ts` and runs with `npm test`. Latest run: **pass** - the limiter blocks the fourth burst request and reports `retryAfterMs` > 0, demonstrating protection against short-lived floods.
 
 ## Residual risks & follow-up tickets
 
