@@ -133,7 +133,7 @@ export function getServerEnv(): Env {
       }
     }
 
-    if (data.NODE_ENV !== "development") {
+    if (data.NODE_ENV !== "development" && !isBuildTime) {
       if (data.REDIS_TLS_ALLOW_SELF_SIGNED || data.REDIS_ALLOW_INSECURE_TLS) {
         throw new Error(
           "Insecure Redis TLS flags are only permitted during local development. Remove REDIS_TLS_ALLOW_SELF_SIGNED/REDIS_ALLOW_INSECURE_TLS before deploying.",
