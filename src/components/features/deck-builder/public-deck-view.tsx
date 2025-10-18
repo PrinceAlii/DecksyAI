@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -165,6 +165,50 @@ export function PublicDeckView({ deck, isOwner }: PublicDeckViewProps) {
     }
   };
 
+  const cardsSection = (
+    <Card className="p-6 border-border/60">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-xl font-bold text-text">Deck Cards</h2>
+        <div className="flex items-center gap-4">
+          <div className="text-sm">
+            <span className="text-text-muted">Avg Elixir:</span>
+            <span className="ml-2 font-bold text-accent">{avgElixir}</span>
+          </div>
+          <div className="text-sm">
+            <span className="text-text-muted">Cards:</span>
+            <span className="ml-2 font-bold text-primary">{cardData.length}/8</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {cardData.map((card) => (
+          <div
+            key={card.key}
+            className="relative flex flex-col items-center gap-2 rounded-lg border border-primary/60 bg-primary/10 p-4 hover:border-primary hover:shadow-lg hover:shadow-primary/20 transition"
+          >
+            <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/40 bg-surface">
+              <Image
+                src={getCardArtUrl(card)}
+                alt={card.name}
+                fill
+                sizes="200px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+            <p className="text-sm font-medium text-text text-center line-clamp-1">
+              {card.name}
+            </p>
+            <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
+              {card.elixir}
+            </Badge>
+          </div>
+        ))}
+      </div>
+    </Card>
+  );
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -270,47 +314,7 @@ export function PublicDeckView({ deck, isOwner }: PublicDeckViewProps) {
       <div className="container max-w-5xl mx-auto px-4 py-8">
         <div className="grid gap-6">
           {/* Cards Grid */}
-          <Card className="p-6 border-border/60">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-bold text-text">Deck Cards</h2>
-              <div className="flex items-center gap-4">
-                <div className="text-sm">
-                  <span className="text-text-muted">Avg Elixir:</span>
-                  <span className="ml-2 font-bold text-accent">{avgElixir}</span>
-                </div>
-                <div className="text-sm">
-                  <span className="text-text-muted">Cards:</span>
-                  <span className="ml-2 font-bold text-primary">{cardData.length}/8</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {cardData.map((card) => (
-                <div
-                  key={card.key}
-                  className="relative flex flex-col items-center gap-2 rounded-lg border border-primary/60 bg-primary/10 p-4 hover:border-primary hover:shadow-lg hover:shadow-primary/20 transition"
-                >
-                  <div className="relative aspect-[3/4] w-full overflow-hidden rounded-md border border-border/40 bg-surface">
-                    <Image
-                      src={getCardArtUrl(card)}
-                      alt={card.name}
-                      fill
-                      sizes="200px"
-                      className="object-cover"
-                      unoptimized
-                    />
-                  </div>
-                  <p className="text-sm font-medium text-text text-center line-clamp-1">
-                    {card.name}
-                  </p>
-                  <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
-                    {card.elixir}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          </Card>
+          {cardsSection as any}
 
           {/* AI Analysis (if available) */}
           {deck.aiAnalysis && typeof deck.aiAnalysis === 'object' && (

@@ -187,7 +187,7 @@ export function RecommendationResults({
 
                   <div className="flex flex-wrap gap-3">
                     <Button asChild variant="secondary">
-                      <Link href={`/deck/${activeDeck.deck.slug}?sessionId=${sessionId}`}>Open deck guide</Link>
+                      <Link href={`/deck/recommended/${activeDeck.deck.slug}?sessionId=${sessionId}`}>Open deck guide</Link>
                     </Button>
                   </div>
                 </section>

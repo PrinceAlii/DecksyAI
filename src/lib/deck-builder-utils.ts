@@ -144,7 +144,7 @@ export function exportDeckAsMarkdown(cards: CardData[], deckName?: string): stri
 
 export function getDeckShareUrl(slug: string): string {
   if (typeof window === "undefined") return "";
-  return `${window.location.origin}/deck/${slug}`;
+  return `${window.location.origin}/deck/recommended/${slug}`;
 }
 
 export async function copyToClipboard(text: string): Promise<boolean> {

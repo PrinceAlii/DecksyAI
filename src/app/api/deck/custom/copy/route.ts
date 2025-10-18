@@ -85,7 +85,7 @@ export async function POST(req: NextRequest) {
         userId: session.user.id,
         name: newName,
         slug: uniqueSlug,
-        cards: sourceDeck.cards,
+        cards: sourceDeck.cards as any, // Type assertion needed for JsonValue -> InputJsonValue
         description: sourceDeck.description 
           ? `${sourceDeck.description}\n\nCopied from ${sourceDeck.name}` 
           : `Copied from ${sourceDeck.name}`,

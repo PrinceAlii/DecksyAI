@@ -46,6 +46,9 @@ export async function SiteHeader({ showPlayerSearch = false }: SiteHeaderProps) 
           <Link href={"/deck-builder" as Route} className="transition hover:text-text">
             Deck Builder
           </Link>
+          <Link href={"/decks/browse" as Route} className="transition hover:text-text">
+            Community
+          </Link>
           <Link href={"/account" as Route} className="transition hover:text-text">
             Account
           </Link>
