@@ -114,6 +114,8 @@ export function getServerEnv(): Env {
       throw new Error("Invalid environment variables. Check server logs for details.");
     }
 
+    const data = result.data;
+
     // Skip strict validation during build time (when NEXT_PHASE is set)
     const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
 
