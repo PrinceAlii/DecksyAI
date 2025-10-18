@@ -23,11 +23,18 @@ interface SavedDeck {
   createdAt: string;
   updatedAt: string;
   aiAnalysis?: any;
+  isPublic?: boolean;
+  viewCount?: number;
+  copyCount?: number;
 }
 
 type SortOption = "updated" | "name" | "created";
 
-export function SavedDecksClient() {
+interface SavedDecksClientProps {
+  userId: string;
+}
+
+export function SavedDecksClient({ userId }: SavedDecksClientProps) {
   const router = useRouter();
   const [decks, setDecks] = useState<SavedDeck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -186,6 +193,30 @@ export function SavedDecksClient() {
     }
   };
 
+  const handleTogglePublic = async (deck: SavedDeck, isPublic: boolean) => {
+    try {
+      const response = await fetch("/api/deck/custom", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: deck.id,
+          isPublic,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to update deck visibility");
+      }
+
+      const data = await response.json();
+      
+      // Update local state
+      setDecks(decks.map(d => d.id === deck.id ? { ...d, isPublic } : d));
+    } catch (err) {
+      alert("Failed to update deck visibility");
+    }
+  };
+
   return (
     <>
       <Container className="py-12 space-y-8">
@@ -300,10 +331,12 @@ export function SavedDecksClient() {
               <SavedDeckCard
                 key={deck.id}
                 deck={deck}
+                userId={userId}
                 onLoad={handleLoad}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onAnalyze={handleAnalyze}
+                onTogglePublic={handleTogglePublic}
               />
             ))}
           </div>

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { Pencil, Trash2, Play, Sparkles, Calendar, Zap, GitCompare } from "lucide-react";
+import { Pencil, Trash2, Play, Sparkles, Calendar, Zap, GitCompare, Globe, Lock, Eye, Copy as CopyIcon, Check } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,15 +18,20 @@ interface SavedDeck {
   createdAt: string;
   updatedAt: string;
   aiAnalysis?: any;
+  isPublic?: boolean;
+  viewCount?: number;
+  copyCount?: number;
 }
 
 interface SavedDeckCardProps {
   deck: SavedDeck;
+  userId?: string; // For generating public URL
   onLoad: (deck: SavedDeck) => void;
   onEdit: (deck: SavedDeck) => void;
   onDelete: (deck: SavedDeck) => void;
   onAnalyze: (deck: SavedDeck) => void;
   onCompare?: (deck: SavedDeck) => void;
+  onTogglePublic?: (deck: SavedDeck, isPublic: boolean) => void;
 }
 
 // Helper to calculate average elixir (simplified - you can import from actual card data)
@@ -63,14 +68,35 @@ function formatRelativeDate(dateString: string): string {
   return `${Math.floor(diffDays / 365)} years ago`;
 }
 
-export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze, onCompare }: SavedDeckCardProps) {
+export function SavedDeckCard({ deck, userId, onLoad, onEdit, onDelete, onAnalyze, onCompare, onTogglePublic }: SavedDeckCardProps) {
   const [imageErrors, setImageErrors] = useState<Set<string>>(new Set());
+  const [togglingPublic, setTogglingPublic] = useState(false);
+  const [copyFeedback, setCopyFeedback] = useState(false);
   
   const avgElixir = calculateAvgElixir(deck.cards);
   const hasAnalysis = !!deck.aiAnalysis;
+  const isPublic = deck.isPublic || false;
 
   const handleImageError = (cardKey: string) => {
     setImageErrors(prev => new Set(prev).add(cardKey));
+  };
+  
+  const handleTogglePublic = async () => {
+    if (!onTogglePublic || togglingPublic) return;
+    
+    setTogglingPublic(true);
+    await onTogglePublic(deck, !isPublic);
+    setTogglingPublic(false);
+  };
+  
+  const handleCopyLink = () => {
+    if (!userId) return;
+    
+    const url = `${window.location.origin}/deck/${userId}/${deck.slug}`;
+    navigator.clipboard.writeText(url).then(() => {
+      setCopyFeedback(true);
+      setTimeout(() => setCopyFeedback(false), 2000);
+    });
   };
 
   return (
@@ -82,7 +108,7 @@ export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze, onCom
             <h3 className="text-lg font-semibold text-text truncate group-hover:text-primary transition">
               {deck.name}
             </h3>
-            <div className="mt-1 flex items-center gap-2 text-xs text-text-muted">
+            <div className="mt-1 flex items-center gap-2 text-xs text-text-muted flex-wrap">
               <Calendar className="size-3" />
               <span>{formatRelativeDate(deck.updatedAt)}</span>
               {hasAnalysis && (
@@ -92,6 +118,33 @@ export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze, onCom
                     <Sparkles className="size-3" />
                     AI Analyzed
                   </Badge>
+                </>
+              )}
+              {isPublic && (
+                <>
+                  <span>•</span>
+                  <Badge variant="outline" className="text-xs gap-1 border-accent/60 text-accent">
+                    <Globe className="size-3" />
+                    Public
+                  </Badge>
+                </>
+              )}
+              {isPublic && deck.viewCount !== undefined && deck.viewCount > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <Eye className="size-3" />
+                    {deck.viewCount}
+                  </span>
+                </>
+              )}
+              {isPublic && deck.copyCount !== undefined && deck.copyCount > 0 && (
+                <>
+                  <span>•</span>
+                  <span className="flex items-center gap-1">
+                    <CopyIcon className="size-3" />
+                    {deck.copyCount}
+                  </span>
                 </>
               )}
             </div>
@@ -165,6 +218,30 @@ export function SavedDeckCard({ deck, onLoad, onEdit, onDelete, onAnalyze, onCom
             >
               <GitCompare className="size-3.5" />
               Compare
+            </Button>
+          )}
+          {onTogglePublic && (
+            <Button
+              variant={isPublic ? "outline" : "ghost"}
+              size="sm"
+              onClick={handleTogglePublic}
+              disabled={togglingPublic}
+              className="gap-2"
+              title={isPublic ? "Make Private" : "Make Public"}
+            >
+              {isPublic ? <Globe className="size-3.5" /> : <Lock className="size-3.5" />}
+              {isPublic ? "Public" : "Private"}
+            </Button>
+          )}
+          {isPublic && userId && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleCopyLink}
+              className="gap-2"
+              title="Copy public link"
+            >
+              {copyFeedback ? <Check className="size-3.5" /> : <CopyIcon className="size-3.5" />}
             </Button>
           )}
           <Button

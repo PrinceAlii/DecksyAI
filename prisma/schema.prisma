@@ -133,10 +133,14 @@ model CustomDeck {
   cards       Json // Array of card keys
   description String?
   isPublic    Boolean  @default(false)
+  viewCount   Int      @default(0) // Track public views
+  copyCount   Int      @default(0) // Track how many times copied
   aiAnalysis  Json? // Store Gemini analysis results
 
   @@unique([userId, slug])
   @@index([userId, createdAt])
+  @@index([isPublic, createdAt]) // For browsing public decks
+  @@index([isPublic, viewCount]) // For sorting by popularity
 }
 
 model AuditLog {

@@ -60,6 +60,8 @@ export async function GET(req: NextRequest) {
         cards: true,
         description: true,
         isPublic: true,
+        viewCount: true,
+        copyCount: true,
         aiAnalysis: true,
         createdAt: true,
         updatedAt: true,
