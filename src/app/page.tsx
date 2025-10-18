@@ -8,7 +8,7 @@ import { PlayerOnboarding } from "@/components/features/player-onboarding";
 import { HeroBackground } from "@/components/marketing/hero-background";
 import { HeroContent } from "@/components/marketing/hero-content";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { GradientText } from "@/components/ui/gradient-text";
 import { getServerAuthSession } from "@/lib/auth";
@@ -74,13 +74,13 @@ export default async function HomePage() {
                 explainers.
               </p>
               <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-                <Button size="lg" asChild className="gap-2">
+                <Button size="lg" asChild className="gap-2" variant="glow">
                   <Link href="#get-started">
                     Enter your player tag
                     <ArrowRight className="size-4" />
                   </Link>
                 </Button>
-                <Button size="lg" variant="secondary" asChild>
+                <Button size="lg" variant="glass" asChild className="gap-2">
                   <Link href="/deck/sample">See sample deck guide</Link>
                 </Button>
               </div>
@@ -93,33 +93,31 @@ export default async function HomePage() {
             <PlayerOnboarding />
 
             <div className="grid gap-6">
-              <Card className="border-border/60 bg-surface p-6">
-                <CardContent className="flex items-start gap-4 p-0">
-                  <span className="mt-1 inline-flex size-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <Trophy className="size-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-lg font-semibold text-text">Tailored for your climb</h3>
-                    <p className="mt-1 text-sm text-text-muted">
-                      Decksy scores decks against your arena, trophies, and card levels using a
-                      transparent rules engine.
-                    </p>
-                  </div>
+              <Card className="p-6">
+                <CardContent className="p-0">
+                  <CardHeader icon={<Trophy className="size-5" />} className="gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-text">Tailored for your climb</h3>
+                      <p className="mt-1 text-sm text-text-muted">
+                        Decksy scores decks against your arena, trophies, and card levels using a transparent
+                        rules engine.
+                      </p>
+                    </div>
+                  </CardHeader>
                 </CardContent>
               </Card>
 
-              <Card className="border-border/60 bg-surface p-6">
-                <CardContent className="flex items-start gap-4 p-0">
-                  <span className="mt-1 inline-flex size-10 items-center justify-center rounded-full bg-accent/10 text-accent">
-                    <Sparkles className="size-5" />
-                  </span>
-                  <div>
-                    <h3 className="text-lg font-semibold text-text">AI explainers that teach</h3>
-                    <p className="mt-1 text-sm text-text-muted">
-                      Gemini summarizes win conditions, matchups, and safe substitutions so you know what
-                      to practice first.
-                    </p>
-                  </div>
+              <Card className="p-6">
+                <CardContent className="p-0">
+                  <CardHeader icon={<Sparkles className="size-5" />} className="gap-4">
+                    <div>
+                      <h3 className="text-lg font-semibold text-text">AI explainers that teach</h3>
+                      <p className="mt-1 text-sm text-text-muted">
+                        Gemini summarizes win conditions, matchups, and safe substitutions so you know what to
+                        practice first.
+                      </p>
+                    </div>
+                  </CardHeader>
                 </CardContent>
               </Card>
             </div>
