@@ -1,8 +1,8 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { ArrowLeft, Wrench } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
-import { DeckBuilder } from "@/components/features/deck-builder/deck-builder";
+import { DeckBuilderClient } from "@/components/features/deck-builder/deck-builder-client";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/container";
 import { SiteHeader } from "@/components/ui/site-header";
@@ -48,23 +48,8 @@ export default function DeckBuilderPage() {
           </div>
 
           <Suspense fallback={<div className="text-text-muted">Loading deck builder...</div>}>
-            <DeckBuilder 
-              onSaveDeck={(cards) => {
-                console.log("Deck saved:", cards);
-                // TODO: Integrate with your API to save deck and generate recommendations
-              }}
-            />
+            <DeckBuilderClient />
           </Suspense>
-
-          <div className="rounded-2xl border border-border/60 bg-surface/70 p-8 text-center">
-            <Wrench className="mx-auto size-12 text-accent mb-4" />
-            <h2 className="text-xl font-semibold text-text">Coming Soon: Player Profile Integration</h2>
-            <p className="mt-2 text-sm text-text-muted">
-              Enter your player tag to auto-populate cards you own with their current levels.
-              The deck builder will highlight cards you can upgrade and suggest optimal builds
-              based on your collection.
-            </p>
-          </div>
         </Container>
       </div>
     </div>

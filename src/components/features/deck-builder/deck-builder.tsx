@@ -2,13 +2,15 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import { Sparkles, Trash2, Save, Share2, TrendingUp } from "lucide-react";
+import { Sparkles, Trash2, Save, Share2, TrendingUp, Search, Loader2, User } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { getCardArtUrl, CARD_ART_PLACEHOLDER } from "@/lib/data/card-art";
+import { normalizePlayerTag } from "@/lib/player-tag";
 
 interface CardData {
   key: string;
@@ -23,7 +25,8 @@ interface CardData {
 interface DeckBuilderProps {
   playerCards?: CardData[];
   showOnlyOwned?: boolean;
-  onSaveDeck?: (cards: CardData[]) => void;
+  onSaveDeck?: (cards: CardData[], deckName: string) => void;
+  onAnalyzeDeck?: (cards: CardData[]) => void;
 }
 
 const CARD_CATEGORIES = [
@@ -125,20 +128,27 @@ const ALL_CARDS: CardData[] = [
   { key: "cannon_cart", name: "Cannon Cart", category: "building", elixir: 5, rarity: "epic" },
 ];
 
-export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck }: DeckBuilderProps) {
+export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, onAnalyzeDeck }: DeckBuilderProps) {
   const [selectedCards, setSelectedCards] = useState<CardData[]>([]);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [showOwnedOnly, setShowOwnedOnly] = useState(showOnlyOwned);
+  const [playerTag, setPlayerTag] = useState("");
+  const [loadingPlayer, setLoadingPlayer] = useState(false);
+  const [playerError, setPlayerError] = useState<string | null>(null);
+  const [loadedPlayerData, setLoadedPlayerData] = useState<CardData[] | null>(null);
+  const [deckName, setDeckName] = useState("");
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   // Merge player card data with all cards
   const availableCards = useMemo(() => {
-    if (!playerCards || playerCards.length === 0) return ALL_CARDS;
+    const cardsToMerge = loadedPlayerData || playerCards;
+    if (!cardsToMerge || cardsToMerge.length === 0) return ALL_CARDS;
     
     return ALL_CARDS.map(card => {
-      const playerCard = playerCards.find(pc => pc.key === card.key);
+      const playerCard = cardsToMerge.find(pc => pc.key === card.key);
       return playerCard ? { ...card, owned: true, level: playerCard.level } : card;
     });
-  }, [playerCards]);
+  }, [playerCards, loadedPlayerData]);
 
   // Filter cards based on category and ownership
   const filteredCards = useMemo(() => {
@@ -185,8 +195,68 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck }: 
   };
 
   const handleSaveDeck = () => {
-    if (onSaveDeck && selectedCards.length === 8) {
-      onSaveDeck(selectedCards);
+    if (selectedCards.length === 8) {
+      setShowSaveDialog(true);
+    }
+  };
+
+  const handleConfirmSave = () => {
+    if (onSaveDeck && selectedCards.length === 8 && deckName.trim()) {
+      onSaveDeck(selectedCards, deckName.trim());
+      setShowSaveDialog(false);
+      setDeckName("");
+    }
+  };
+
+  const handleLoadPlayer = async () => {
+    if (!playerTag.trim()) {
+      setPlayerError("Please enter a player tag");
+      return;
+    }
+
+    setLoadingPlayer(true);
+    setPlayerError(null);
+
+    try {
+      const normalizedTag = normalizePlayerTag(playerTag);
+      const response = await fetch(`/api/player?tag=${encodeURIComponent(normalizedTag)}`);
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Failed to load player data");
+      }
+
+      const data = await response.json();
+      
+      // Transform player cards to CardData format
+      const playerCardsData: CardData[] = data.cards
+        .map((card: any) => {
+          const cardKey = card.name.toLowerCase().replace(/[.\s]/g, "_");
+          const cardData = ALL_CARDS.find(c => c.key === cardKey);
+          
+          if (!cardData) return null;
+          
+          return {
+            ...cardData,
+            owned: true,
+            level: card.level,
+          };
+        })
+        .filter(Boolean);
+
+      setLoadedPlayerData(playerCardsData);
+      setPlayerError(null);
+    } catch (error) {
+      setPlayerError(error instanceof Error ? error.message : "Failed to load player data");
+      setLoadedPlayerData(null);
+    } finally {
+      setLoadingPlayer(false);
+    }
+  };
+
+  const handleAnalyze = () => {
+    if (onAnalyzeDeck && selectedCards.length === 8) {
+      onAnalyzeDeck(selectedCards);
     }
   };
 
@@ -199,6 +269,96 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck }: 
 
   return (
     <div className="flex flex-col gap-6">
+      {/* Player Tag Input */}
+      <Card className="border-border/60 bg-surface/80">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3">
+            <User className="size-5 text-primary" />
+            <div className="flex-1">
+              <h3 className="text-base font-semibold text-text">Load Your Cards</h3>
+              <p className="text-sm text-text-muted">
+                Enter your player tag to load your card collection
+              </p>
+            </div>
+          </div>
+          
+          <div className="mt-4 flex gap-3">
+            <Input
+              placeholder="#ABC123"
+              value={playerTag}
+              onChange={(e) => setPlayerTag(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleLoadPlayer()}
+              className="flex-1"
+              disabled={loadingPlayer}
+            />
+            <Button
+              onClick={handleLoadPlayer}
+              disabled={loadingPlayer || !playerTag.trim()}
+              className="gap-2"
+            >
+              {loadingPlayer ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                <>
+                  <Search className="size-4" />
+                  Load Cards
+                </>
+              )}
+            </Button>
+          </div>
+
+          {playerError && (
+            <p className="mt-2 text-sm text-red-400">{playerError}</p>
+          )}
+
+          {loadedPlayerData && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-accent">
+              <Badge variant="primary">✓</Badge>
+              <span>Loaded {loadedPlayerData.length} cards from your collection</span>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Save Dialog */}
+      {showSaveDialog && (
+        <Card className="border-primary/60 bg-primary/5">
+          <CardContent className="p-6">
+            <h3 className="text-base font-semibold text-text mb-4">Save Your Deck</h3>
+            <Input
+              placeholder="Enter deck name (e.g., 'My Hog Cycle')"
+              value={deckName}
+              onChange={(e) => setDeckName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleConfirmSave()}
+              className="mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <Button
+                variant="primary"
+                onClick={handleConfirmSave}
+                disabled={!deckName.trim()}
+                className="flex-1"
+              >
+                Save Deck
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowSaveDialog(false);
+                  setDeckName("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Deck Display Area */}
       <Card className="border-border/60 bg-surface/80">
         <CardContent className="p-6">
@@ -214,6 +374,12 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck }: 
                 <Button variant="outline" size="sm" onClick={handleClearDeck} className="gap-2">
                   <Trash2 className="size-4" />
                   Clear
+                </Button>
+              )}
+              {deckComplete && onAnalyzeDeck && (
+                <Button variant="outline" size="sm" onClick={handleAnalyze} className="gap-2">
+                  <Sparkles className="size-4" />
+                  Analyze
                 </Button>
               )}
               {deckComplete && (

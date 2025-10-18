@@ -43,6 +43,9 @@ export async function SiteHeader({ showPlayerSearch = false }: SiteHeaderProps) 
           {/* Show player search if user is logged in and has a player tag, or if explicitly requested */}
           {session?.user && (hasPlayerTag || showPlayerSearch) && <PlayerSearch />}
           
+          <Link href={"/deck-builder" as Route} className="transition hover:text-text">
+            Deck Builder
+          </Link>
           <Link href={"/account" as Route} className="transition hover:text-text">
             Account
           </Link>

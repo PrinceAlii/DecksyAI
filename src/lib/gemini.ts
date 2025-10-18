@@ -291,3 +291,134 @@ export async function generateExplainer(
     }
   }
 }
+
+/**
+ * Custom deck analysis schema
+ */
+const customDeckAnalysisSchema = z.object({
+  summary: z.string(),
+  strengths: z.array(z.string()).max(3),
+  weaknesses: z.array(z.string()).max(3),
+  synergies: z.array(z.object({
+    cards: z.array(z.string()),
+    description: z.string(),
+  })).max(3),
+  suggestions: z.array(z.string()).max(3),
+  rating: z.object({
+    overall: z.number().min(1).max(10),
+    offense: z.number().min(1).max(10),
+    defense: z.number().min(1).max(10),
+    versatility: z.number().min(1).max(10),
+  }),
+});
+
+type CustomDeckAnalysis = z.infer<typeof customDeckAnalysisSchema>;
+
+/**
+ * Generate AI analysis for a custom deck
+ */
+export async function generateCustomDeckAnalysis(cardKeys: string[]): Promise<CustomDeckAnalysis> {
+  const env = getServerEnv();
+
+  if (!env.GEMINI_API_KEY || isDevelopment()) {
+    return {
+      summary: "This is a well-rounded deck with good synergy between your cards. The average elixir cost allows for flexible cycling while maintaining pressure.",
+      strengths: [
+        "Good balance between offense and defense",
+        "Flexible card rotation options",
+        "Multiple spell options for different situations",
+      ],
+      weaknesses: [
+        "May struggle against heavy beatdown decks",
+        "Requires good elixir management",
+        "Vulnerable to swarm units if spells are out of cycle",
+      ],
+      synergies: [
+        {
+          cards: cardKeys.slice(0, 2),
+          description: "These cards work together to create strong counter-push opportunities",
+        },
+      ],
+      suggestions: [
+        "Consider adding a building for additional defense",
+        "Practice spell timing to maximize value",
+        "Focus on elixir advantage before committing to a push",
+      ],
+      rating: {
+        overall: 7,
+        offense: 7,
+        defense: 7,
+        versatility: 8,
+      },
+    };
+  }
+
+  try {
+    const client = new GoogleGenerativeAI(env.GEMINI_API_KEY);
+    const model = client.getGenerativeModel({ 
+      model: env.GEMINI_MODEL || "gemini-2.5-flash",
+    });
+
+    const prompt = [
+      "You are Decksy AI, an expert Clash Royale deck analyst.",
+      `Analyze this custom deck composition: ${cardKeys.join(", ")}.`,
+      "Provide a comprehensive analysis including:",
+      "1. A brief summary of the deck's playstyle and win condition",
+      "2. Top 3 strengths of this deck composition",
+      "3. Top 3 weaknesses or vulnerabilities",
+      "4. Key card synergies (max 3, identifying which cards work well together)",
+      "5. Improvement suggestions (max 3 actionable tips)",
+      "6. Rating scores (1-10) for overall strength, offensive capability, defensive capability, and versatility",
+      "Be specific, tactical, and encouraging. Focus on gameplay strategy.",
+      "Respond strictly as JSON matching this schema:",
+      JSON.stringify({
+        summary: "string",
+        strengths: ["string", "string", "string"],
+        weaknesses: ["string", "string", "string"],
+        synergies: [{ cards: ["card1", "card2"], description: "string" }],
+        suggestions: ["string", "string", "string"],
+        rating: { overall: 7, offense: 7, defense: 7, versatility: 7 },
+      }),
+    ].join(" ");
+
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json" },
+    });
+
+    const response = result.response.text();
+    const parsed = JSON.parse(response);
+    const validated = customDeckAnalysisSchema.parse(parsed);
+
+    return validated;
+  } catch (error) {
+    console.error("[generateCustomDeckAnalysis] Error:", error);
+    
+    // Return fallback analysis
+    return {
+      summary: "Analysis failed. This deck composition shows potential but requires testing to evaluate fully.",
+      strengths: [
+        "Diverse card types for different situations",
+        "Balanced elixir distribution",
+        "Multiple win condition options",
+      ],
+      weaknesses: [
+        "Synergies need testing",
+        "May lack specific counters",
+        "Requires practice to master",
+      ],
+      synergies: [],
+      suggestions: [
+        "Test against different archetypes",
+        "Adjust card levels for consistency",
+        "Practice optimal card rotation",
+      ],
+      rating: {
+        overall: 6,
+        offense: 6,
+        defense: 6,
+        versatility: 7,
+      },
+    };
+  }
+}
