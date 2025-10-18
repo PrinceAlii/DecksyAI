@@ -88,6 +88,11 @@ export const CARD_ELIXIR_COST: Record<string, number> = {
   battle_healer: 4,
   elixir_golem: 3,
   rage: 2,
+  princess: 3,
+  wizard: 5,
+  little_prince: 3,
+  mirror: 0, // Variable cost
+  spear_goblins: 2,
 };
 
 export function getElixirCostForCard(key: string): number | undefined {
