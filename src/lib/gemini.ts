@@ -112,15 +112,32 @@ function buildCacheKey(
   return `gemini:explainer:${modelPreference}:${signature}`;
 }
 
-export function parseGeminiPayload(raw: string): GeminiExplainerPayload | null {
+export function parseGeminiPayload(raw: string, silent = false): GeminiExplainerPayload | null {
   const cleaned = raw.replace(/```json|```/g, "").trim();
+
+  // Quick checks for incomplete JSON:
+  // 1. Must start with { and end with }
+  // 2. Count of opening and closing braces should match
+  if (!cleaned.startsWith("{") || !cleaned.endsWith("}")) {
+    return null;
+  }
+
+  const openBraces = (cleaned.match(/{/g) || []).length;
+  const closeBraces = (cleaned.match(/}/g) || []).length;
+  
+  if (openBraces !== closeBraces) {
+    return null;
+  }
 
   try {
     const parsed = JSON.parse(cleaned);
     const result = geminiExplainerSchema.safeParse(parsed);
     return result.success ? result.data : null;
   } catch (error) {
-    console.warn(`Failed to parse Gemini response as JSON: ${String(error)}`);
+    // During streaming, incomplete JSON is expected, so only log if not silent
+    if (!silent) {
+      console.warn(`Failed to parse Gemini response as JSON: ${String(error)}`);
+    }
     return null;
   }
 }
@@ -217,13 +234,15 @@ export async function* generateExplainerStream(
         buffer += text;
         yield { type: "delta", rawText: buffer, model: modelId };
 
-        const payload = parseGeminiPayload(buffer);
+        // Try to parse, but suppress errors during streaming (incomplete JSON is expected)
+        const payload = parseGeminiPayload(buffer, true);
         if (payload) {
           yield { type: "update", payload: normaliseExplainer(payload, fallback), model: modelId };
         }
       }
 
-      const payload = parseGeminiPayload(buffer);
+      // Final parse with error logging enabled
+      const payload = parseGeminiPayload(buffer, false);
 
       if (!payload) {
         throw new Error("Gemini response not in expected JSON format");

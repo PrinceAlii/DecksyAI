@@ -100,6 +100,7 @@ describe("API schemas", () => {
         opponent: "Ladder Legend",
         result: "win" as const,
         deck: ["mega_knight", "miner"],
+        opponentDeck: ["royal_giant", "fisherman"],
         timestamp: new Date().toISOString(),
       },
     ]);

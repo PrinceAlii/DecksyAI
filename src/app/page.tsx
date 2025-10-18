@@ -66,8 +66,8 @@ export default async function HomePage() {
               <span className="text-accent"> your playstyle</span>
             </h1>
             <p className="mt-6 max-w-2xl text-lg text-text-muted">
-              Decksy AI analyzes your profile, favorite archetypes, and battle history to recommend
-              decks you&apos;ll actually love to play—then coaches you to climb faster with Gemini-powered
+              Decksy analyzes your profile, favorite archetypes, and battle history to recommend
+              decks you&apos;ll actually love to play - then coaches you to climb faster with Gemini
               explainers.
             </p>
             <div className="mt-10 flex flex-col gap-3 sm:flex-row">
@@ -125,7 +125,7 @@ export default async function HomePage() {
 
       <footer className="border-t border-border/60 bg-surface py-8">
         <Container className="flex flex-col gap-4 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between">
-          <p>&copy; {new Date().getFullYear()} Decksy AI. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Decksy. All rights reserved.</p>
           <div className="flex items-center gap-6">
             <Link href={"/privacy" as Route} className="transition hover:text-text">
               Privacy

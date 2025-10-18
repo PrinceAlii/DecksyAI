@@ -24,7 +24,7 @@ function resolveErrorMessage(code?: string | null): string | null {
 
 function resolveStatusMessage(status?: string | null): string | null {
   if (status === "check-email") {
-    return "Check your inbox for the Decksy AI magic link.";
+    return "Check your inbox for the Decksy magic link.";
   }
   return null;
 }
@@ -99,7 +99,7 @@ export default async function LoginPage({
               <li>Magic links expire after 10 minutes and can be revoked anytime.</li>
               <li>Sessions are stored server-side and audited for suspicious activity.</li>
               <li>
-                We only request your email—no Supercell credentials are ever collected or stored by Decksy.
+                We only request your email - no Supercell credentials are ever collected or stored by Decksy.
               </li>
             </ul>
             <div className="flex items-center gap-3 rounded-lg border border-primary/40 bg-primary/10 p-4 text-sm text-text">

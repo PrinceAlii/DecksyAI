@@ -29,6 +29,28 @@ const MOCK_COLLECTION: PlayerCollectionCard[] = [
   { key: "royal_ghost", level: 12 },
 ];
 
+// Normalise a human card name (e.g., "P.E.K.K.A", "The Log") into our snake_case key (e.g., "pekka", "log").
+// - Lowercase
+// - Strip diacritics
+// - Remove punctuation except spaces/underscores
+// - Collapse whitespace to single underscore
+// Returns null if we can't derive a non-empty key
+const toKey = (name?: string | null): string | null => {
+  if (!name) return null;
+  // Remove diacritics
+  const withoutDiacritics = name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "");
+  // Keep letters/numbers/space/underscore, then convert spaces to underscores
+  const cleaned = withoutDiacritics
+    .replace(/[^a-z0-9_\s]/g, "")
+    .trim()
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_");
+  return cleaned.length > 0 ? cleaned : null;
+};
+
 export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
   const cacheKey = `player:${tag}`;
   const cached = await cacheGet<PlayerProfile>(cacheKey);
@@ -58,12 +80,20 @@ export async function fetchPlayerProfile(tag: string): Promise<PlayerProfile> {
       name: data.name,
       trophies: data.trophies,
       arena: data.currentArena?.name ?? "Unknown Arena",
-      collection: data.cards
-        .filter((card) => card.key || card.name)
-        .map((card) => ({
-          key: card.key || card.name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, ""),
-          level: card.level,
-        })),
+      collection: (data.cards ?? [])
+        .flatMap((card) => {
+          const key = card.key ?? toKey(card.name);
+          if (!key) {
+            // Drop unrecognisable entries to preserve data integrity
+            console.warn("Skipping card with missing/invalid key in player collection:", {
+              id: card.id,
+              name: card.name,
+            });
+            return [] as PlayerCollectionCard[];
+          }
+          const level = typeof card.level === "number" && Number.isFinite(card.level) ? card.level : 0;
+          return [{ key, level } satisfies PlayerCollectionCard];
+        }),
     };
 
     await cacheSet(cacheKey, profile, 300);
@@ -154,7 +184,7 @@ export async function fetchBattleLog(tag: string): Promise<BattleLogEntry[]> {
       if (!player) return [];
       const sources = player.cards ?? player.deck ?? [];
       return sources
-        .map((card) => card?.key || (card?.name ? card.name.toLowerCase().replace(/\s+/g, "_") : null))
+        .map((card) => card?.key || toKey(card?.name))
         .filter((key): key is string => Boolean(key));
     };
 

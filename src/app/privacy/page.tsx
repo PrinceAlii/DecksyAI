@@ -20,15 +20,15 @@ const sections = [
       "Detect abuse and maintain the stability of our Clash Royale API integrations.",
     ],
   },
-  {
-    title: "Your choices",
-    body: [
-      "Signed-in players can export or delete their account data from the account page whenever they need.",
-      "You can delete recommendation history at any time from the history page.",
-      "Use the cookie banner (or revisit this page) to update your analytics consent whenever you change your mind.",
-      "Contact privacy@decksy.ai if you need help—we usually respond within 7 days.",
-    ],
-  },
+      {
+        title: "Your choices",
+        body: [
+          "Signed-in players can export or delete their account data from the account page whenever they need.",
+          "You can delete recommendation history at any time from the history page.",
+          "Use the cookie banner (or revisit this page) to update your analytics consent whenever you change your mind.",
+          "Contact privacy@decksy.ai if you need help - we usually respond within 7 days.",
+        ],
+      },
   {
     title: "Cookies & analytics",
     body: [
@@ -46,8 +46,8 @@ export default function PrivacyPage() {
         <header className="space-y-3">
           <h1 className="text-3xl font-semibold text-text">Privacy policy</h1>
           <p className="text-sm text-text-muted">
-            Updated {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}. Decksy AI
-            respects your time and your data—we only collect what we need to recommend decks.
+            Updated {new Date().toLocaleDateString(undefined, { month: "long", day: "numeric", year: "numeric" })}. Decksy
+            respects your time and your data - we only collect what we need to recommend decks.
           </p>
         </header>
 
