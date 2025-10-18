@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, LinkIcon, UserCircle } from "lucide-react";
+import { ArrowLeft, LinkIcon, UserCircle, Layers } from "lucide-react";
 
 import { AccountProfileForm } from "@/components/features/account/account-profile-form";
 import { SessionSecurityCard } from "@/components/features/account/session-security-card";
@@ -93,6 +93,27 @@ export default async function AccountPage() {
               </div>
             </div>
             <AccountProfileForm defaults={defaults} />
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/60 bg-surface">
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Layers className="size-6 text-accent" />
+              <div>
+                <h2 className="text-lg font-semibold text-text">My Decks</h2>
+                <p className="text-sm text-text-muted">Manage your custom deck builds and AI analysis.</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-border/60 bg-background/60 p-6 text-center">
+              <p className="mb-4 text-sm text-text-muted">
+                View and manage all your saved custom decks in one place.
+              </p>
+              <Button asChild variant="primary">
+                <Link href="/account/decks">View My Decks</Link>
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

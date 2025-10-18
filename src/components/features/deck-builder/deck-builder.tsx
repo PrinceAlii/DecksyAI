@@ -27,6 +27,8 @@ interface DeckBuilderProps {
   showOnlyOwned?: boolean;
   onSaveDeck?: (cards: CardData[], deckName: string) => void;
   onAnalyzeDeck?: (cards: CardData[]) => void;
+  initialCards?: string[];
+  initialDeckName?: string;
 }
 
 const CARD_CATEGORIES = [
@@ -128,7 +130,7 @@ const ALL_CARDS: CardData[] = [
   { key: "cannon_cart", name: "Cannon Cart", category: "building", elixir: 5, rarity: "epic" },
 ];
 
-export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, onAnalyzeDeck }: DeckBuilderProps) {
+export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, onAnalyzeDeck, initialCards, initialDeckName }: DeckBuilderProps) {
   const [selectedCards, setSelectedCards] = useState<CardData[]>([]);
   const [filterCategory, setFilterCategory] = useState<string | null>(null);
   const [showOwnedOnly, setShowOwnedOnly] = useState(showOnlyOwned);
@@ -136,8 +138,16 @@ export function DeckBuilder({ playerCards, showOnlyOwned = false, onSaveDeck, on
   const [loadingPlayer, setLoadingPlayer] = useState(false);
   const [playerError, setPlayerError] = useState<string | null>(null);
   const [loadedPlayerData, setLoadedPlayerData] = useState<CardData[] | null>(null);
-  const [deckName, setDeckName] = useState("");
+  const [deckName, setDeckName] = useState(initialDeckName || "");
   const [showSaveDialog, setShowSaveDialog] = useState(false);
+
+  // Load initial cards if provided
+  useMemo(() => {
+    if (initialCards && initialCards.length > 0) {
+      const cards = ALL_CARDS.filter(card => initialCards.includes(card.key));
+      setSelectedCards(cards);
+    }
+  }, [initialCards]);
 
   // Merge player card data with all cards
   const availableCards = useMemo(() => {
