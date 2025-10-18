@@ -55,8 +55,8 @@ export default async function LoginPage({
   );
 
   return (
-    <div className="bg-background py-16">
-      <Container className="grid gap-10 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,0.45fr)]">
+    <div className="min-h-screen bg-background py-8 sm:py-16">
+      <Container className="grid gap-8 lg:gap-10 lg:grid-cols-[minmax(0,0.55fr)_minmax(0,0.45fr)]">
         <div className="space-y-6">
           <div className="space-y-2">
             <Button asChild variant="ghost" size="sm" className="-ml-2 text-text-muted">
@@ -64,7 +64,7 @@ export default async function LoginPage({
                 <ArrowLeft className="mr-2 size-4" /> Home
               </Link>
             </Button>
-            <h1 className="text-3xl font-semibold text-text">Log in to Decksy</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-text">Log in to Decksy</h1>
             <p className="text-sm text-text-muted">
               Use a secure magic link or sign in with GitHub to sync your deck history, feedback, and coaching notes across every
               device.

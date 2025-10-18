@@ -66,8 +66,8 @@ export default async function AccountPage() {
   };
 
   return (
-    <div className="bg-background py-16">
-      <Container className="space-y-10">
+    <div className="min-h-screen bg-background py-8 sm:py-16">
+      <Container className="space-y-8 sm:space-y-10">
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-2">
             <Button asChild variant="ghost" size="sm" className="-ml-2 text-text-muted">
@@ -75,7 +75,7 @@ export default async function AccountPage() {
                 <ArrowLeft className="mr-2 size-4" /> Home
               </Link>
             </Button>
-            <h1 className="text-3xl font-semibold text-text">Account &amp; preferences</h1>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-text">Account &amp; preferences</h1>
             <p className="text-sm text-text-muted">
               Manage your Clash Royale profile context, connected sign-ins, and security controls in one place.
             </p>
