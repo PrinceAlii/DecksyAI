@@ -114,11 +114,10 @@ export function getServerEnv(): Env {
       throw new Error("Invalid environment variables. Check server logs for details.");
     }
 
-    const data = result.data;
-
     // Skip strict validation during build time (when NEXT_PHASE is set)
     const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
 
+    // Production-only checks (deferred to runtime, not build time)
     if (data.NODE_ENV === "production" && !isBuildTime) {
       if (!data.NEXTAUTH_SECRET?.trim()) {
         throw new Error(
@@ -133,6 +132,7 @@ export function getServerEnv(): Env {
       }
     }
 
+    // Insecure TLS flags should never be used outside development (runtime check)
     if (data.NODE_ENV !== "development" && !isBuildTime) {
       if (data.REDIS_TLS_ALLOW_SELF_SIGNED || data.REDIS_ALLOW_INSECURE_TLS) {
         throw new Error(
