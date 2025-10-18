@@ -4,9 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Loader2, Sparkles, Trophy } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { PlayerProfile, QuizResponse } from "@/lib/scoring";
@@ -30,6 +31,32 @@ const quizDefaults: QuizResponse = {
   comfortLevel: "bridge",
   riskTolerance: "mid",
 };
+
+const quizSections = [
+  {
+    key: "preferredPace",
+    label: "Preferred pace",
+    options: ["aggro", "balanced", "control"],
+    icon: Trophy,
+  },
+  {
+    key: "comfortLevel",
+    label: "Comfort win condition",
+    options: ["cycle", "bridge", "spell"],
+    icon: Sparkles,
+  },
+  {
+    key: "riskTolerance",
+    label: "Risk tolerance",
+    options: ["safe", "mid", "greedy"],
+    icon: Sparkles,
+  },
+] as const satisfies ReadonlyArray<{
+  key: keyof QuizResponse;
+  label: string;
+  options: readonly string[];
+  icon: LucideIcon;
+}>;
 
 export function PlayerOnboarding() {
   const router = useRouter();
@@ -153,6 +180,10 @@ export function PlayerOnboarding() {
     }
   }
 
+  function handleQuizSelection<K extends keyof QuizResponse>(key: K, value: QuizResponse[K]) {
+    setQuiz((prev) => ({ ...prev, [key]: value }));
+  }
+
   const recentBattleSummary = useMemo(() => {
     if (battles.length === 0) {
       return null;
@@ -165,16 +196,23 @@ export function PlayerOnboarding() {
   }, [battles]);
 
   return (
-    <div className="space-y-6">
-      <Card className="border-border/60 bg-surface p-8">
-        <CardContent className="space-y-6 p-0">
-          <div>
-            <h2 className="text-2xl font-semibold text-text">Start with your player tag</h2>
-            <p className="mt-2 text-text-muted">
+    <div className="space-y-8">
+      <Card className="p-8 md:p-10">
+        <CardContent className="space-y-8 p-0">
+          <div className="space-y-3">
+            <CardHeader
+              icon={<Sparkles className="size-5" />}
+              className="flex-col gap-3 sm:flex-row sm:items-center sm:gap-4"
+            >
+              <div>
+                <h2 className="text-2xl font-semibold text-text">Start with your player tag</h2>
+              </div>
+            </CardHeader>
+            <p className="text-sm text-text-muted sm:text-base">
               Securely connect via the Clash Royale API. We fetch your cards and battle history to build a profile in seconds.
             </p>
           </div>
-          <form className="space-y-4" aria-label="Player tag" onSubmit={handleFetchPlayer}>
+          <form className="grid gap-4 sm:gap-5" aria-label="Player tag" onSubmit={handleFetchPlayer}>
             <label className="block text-sm font-medium text-text-muted" htmlFor="tag">
               Player Tag
             </label>
@@ -212,7 +250,12 @@ export function PlayerOnboarding() {
                 {inlineValidationMessage}
               </p>
             )}
-            <Button type="submit" className="w-full justify-center gap-2" disabled={loading || !tagIsValid}>
+            <Button
+              type="submit"
+              className="w-full justify-center gap-2"
+              variant="glow"
+              disabled={loading || !tagIsValid}
+            >
               {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
               Fetch my data
             </Button>
@@ -233,9 +276,12 @@ export function PlayerOnboarding() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.2 }}
           >
-            <Card className="border-border/60 bg-surface p-8">
-              <CardContent className="space-y-6 p-0">
-                <header className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <Card className="p-8 md:p-10">
+              <CardContent className="space-y-8 p-0">
+                <CardHeader
+                  icon={<Trophy className="size-5" />}
+                  className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+                >
                   <div>
                     <h3 className="text-xl font-semibold text-text">{player.name}</h3>
                     <p className="text-sm text-text-muted">
@@ -243,7 +289,7 @@ export function PlayerOnboarding() {
                     </p>
                   </div>
                   {recentBattleSummary ? (
-                    <div className="flex items-center gap-2 text-sm text-text-muted">
+                    <div className="flex items-center gap-2 text-xs text-text-muted sm:text-sm">
                       <Badge variant="secondary">{recentBattleSummary.wins}W</Badge>
                       <Badge variant="outline">{recentBattleSummary.losses}L</Badge>
                       <Badge variant="ghost">{recentBattleSummary.draws}D</Badge>
@@ -251,64 +297,76 @@ export function PlayerOnboarding() {
                   ) : (
                     <p className="text-sm text-text-muted">Battle history unavailable</p>
                   )}
-                </header>
+                </CardHeader>
 
                 <form className="grid gap-6" onSubmit={handleRecommend}>
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-text">Preferred pace</label>
-                      <div className="grid gap-2">
-                        {(["aggro", "balanced", "control"] as const).map((option) => (
-                          <Button
-                            key={option}
-                            type="button"
-                            variant={quiz.preferredPace === option ? "primary" : "outline"}
-                            className="justify-between"
-                            onClick={() => setQuiz((prev) => ({ ...prev, preferredPace: option }))}
-                          >
-                            <span className="capitalize">{option}</span>
-                            {quiz.preferredPace === option && <Trophy className="size-4" />}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-text">Comfort win condition</label>
-                      <div className="grid gap-2">
-                        {(["cycle", "bridge", "spell"] as const).map((option) => (
-                          <Button
-                            key={option}
-                            type="button"
-                            variant={quiz.comfortLevel === option ? "primary" : "outline"}
-                            className="justify-between"
-                            onClick={() => setQuiz((prev) => ({ ...prev, comfortLevel: option }))}
-                          >
-                            <span className="capitalize">{option}</span>
-                            {quiz.comfortLevel === option && <Sparkles className="size-4" />}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-text">Risk tolerance</label>
-                      <div className="grid gap-2">
-                        {(["safe", "mid", "greedy"] as const).map((option) => (
-                          <Button
-                            key={option}
-                            type="button"
-                            variant={quiz.riskTolerance === option ? "primary" : "outline"}
-                            className="justify-between"
-                            onClick={() => setQuiz((prev) => ({ ...prev, riskTolerance: option }))}
-                          >
-                            <span className="capitalize">{option}</span>
-                            {quiz.riskTolerance === option && <Sparkles className="size-4" />}
-                          </Button>
-                        ))}
-                      </div>
-                    </div>
+                    {quizSections.map((section) => {
+                      const Icon = section.icon;
+                      return (
+                        <div key={section.key} className="space-y-2">
+                          <label className="text-sm font-medium text-text">{section.label}</label>
+                          <div className="grid gap-2">
+                            {section.options.map((option) => {
+                              const isActive = quiz[section.key] === option;
+                              return (
+                                <Button
+                                  key={option}
+                                  variant={isActive ? "glow" : "glass"}
+                                  asChild
+                                >
+                                  <motion.button
+                                    type="button"
+                                    className="flex w-full items-center justify-between gap-3 text-sm"
+                                    whileHover={{ y: -2, scale: 1.01 }}
+                                    whileTap={{ scale: 0.98 }}
+                                    transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                                    onClick={() =>
+                                      handleQuizSelection(
+                                        section.key,
+                                        option as QuizResponse[keyof QuizResponse]
+                                      )
+                                    }
+                                  >
+                                    <span className="capitalize">{option}</span>
+                                    <span className="relative flex h-5 w-5 items-center justify-center">
+                                      <AnimatePresence initial={false}>
+                                        {isActive && (
+                                          <motion.span
+                                            key="icon"
+                                            initial={{ scale: 0.5, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.5, opacity: 0 }}
+                                            transition={{ type: "spring", stiffness: 260, damping: 18 }}
+                                            className="relative flex h-5 w-5 items-center justify-center"
+                                          >
+                                            <motion.span
+                                              aria-hidden
+                                              className="absolute -inset-2 rounded-full bg-gradient-to-r from-primary/40 via-accent/40 to-transparent blur-md"
+                                              animate={{ opacity: [0.5, 0.9, 0.5], scale: [1, 1.12, 1] }}
+                                              transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                                            />
+                                            <Icon className="relative size-4" />
+                                          </motion.span>
+                                        )}
+                                      </AnimatePresence>
+                                    </span>
+                                  </motion.button>
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  <Button type="submit" className="w-full gap-2" disabled={loading}>
+                  <Button
+                    type="submit"
+                    className="w-full justify-center gap-2"
+                    variant="glow"
+                    disabled={loading}
+                  >
                     {loading ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
                     Generate recommendations
                   </Button>
