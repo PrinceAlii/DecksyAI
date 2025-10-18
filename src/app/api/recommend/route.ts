@@ -37,7 +37,7 @@ async function resolveFeedbackPreferences(userId?: string) {
   };
 }
 
-async function persistRecommendation(
+export async function persistRecommendation(
   sessionId: string,
   payload: RecommendationPayload,
   breakdown: unknown,
@@ -56,6 +56,13 @@ async function persistRecommendation(
     rationale: payload.quiz as unknown as Prisma.InputJsonValue,
     scoreBreakdown: breakdown as unknown as Prisma.InputJsonValue,
     decks: enrichedDecks as unknown as Prisma.InputJsonValue,
+    ...(payload.userId
+      ? {
+          user: {
+            connect: { id: payload.userId },
+          },
+        }
+      : {}),
   };
 
   await prisma.recommendation.upsert({
@@ -130,7 +137,7 @@ export async function POST(request: NextRequest) {
   }));
 
   if (prisma) {
-    await persistRecommendation(sessionId, body, breakdown, enrichedDecks);
+    await persistRecommendation(sessionId, payload, breakdown, enrichedDecks);
   } else {
     saveRecommendation({
       sessionId,
@@ -138,6 +145,7 @@ export async function POST(request: NextRequest) {
       quiz: payload.quiz,
       scoreBreakdown: breakdown,
       decks: enrichedDecks,
+      userId: payload.userId,
     });
   }
 

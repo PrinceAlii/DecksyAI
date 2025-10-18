@@ -46,6 +46,36 @@ afterEach(() => {
   __resetRecommendationStoreForTests();
 });
 
+describe("saveRecommendation", () => {
+  it("preserves the userId when provided", () => {
+    saveRecommendation({
+      sessionId: "session-with-user",
+      userId: "user-abc",
+      player: samplePlayer,
+      quiz: sampleQuiz,
+      scoreBreakdown: [
+        {
+          deck: sampleDeck.slug,
+          total: 80,
+          breakdown: sampleBreakdown,
+          notes: ["Great pick"],
+        },
+      ],
+      decks: [
+        {
+          deck: sampleDeck,
+          score: 80,
+          breakdown: sampleBreakdown,
+          notes: ["Great pick"],
+        },
+      ],
+    });
+
+    const stored = getRecommendation("session-with-user");
+    expect(stored?.userId).toBe("user-abc");
+  });
+});
+
 describe("buildPlayerProfileSignature", () => {
   it("changes when the player shifts trophy bands", () => {
     const baseline = buildPlayerProfileSignature(samplePlayer);
