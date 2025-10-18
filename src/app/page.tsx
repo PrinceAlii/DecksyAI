@@ -5,6 +5,8 @@ import type { Route } from "next";
 
 import { SignOutButton } from "@/components/features/auth/sign-out-button";
 import { PlayerOnboarding } from "@/components/features/player-onboarding";
+import { HeroBackground } from "@/components/marketing/hero-background";
+import { HeroContent } from "@/components/marketing/hero-content";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
@@ -56,31 +58,33 @@ export default async function HomePage() {
 
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border/60 py-20">
-          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(91,140,255,0.2),_transparent_55%)]" />
-          <Container className="relative flex flex-col items-center text-center">
-            <GradientText as="p" className="mb-6 text-sm font-medium uppercase tracking-[0.3em]">
-              Clash Royale Deck Intelligence
-            </GradientText>
-            <h1 className="max-w-3xl text-balance text-4xl font-semibold leading-tight sm:text-5xl">
-              Build decks that match <span className="text-primary">your cards</span> and
-              <span className="text-accent"> your playstyle</span>
-            </h1>
-            <p className="mt-6 max-w-2xl text-lg text-text-muted">
-              Decksy analyzes your profile, favorite archetypes, and battle history to recommend
-              decks you&apos;ll actually love to play - then coaches you to climb faster with Gemini
-              explainers.
-            </p>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Button size="lg" asChild className="gap-2">
-                <Link href="#get-started">
-                  Enter your player tag
-                  <ArrowRight className="size-4" />
-                </Link>
-              </Button>
-              <Button size="lg" variant="secondary" asChild>
-                <Link href="/deck/sample">See sample deck guide</Link>
-              </Button>
-            </div>
+          <HeroBackground />
+          <Container className="relative">
+            <HeroContent>
+              <GradientText as="p" className="mb-6 text-xs font-semibold uppercase tracking-[0.4em] text-primary">
+                Clash Royale Deck Intelligence
+              </GradientText>
+              <h1 className="mx-auto max-w-[min(48rem,90vw)] text-balance text-[clamp(2.5rem,5vw,3.5rem)] font-semibold leading-[clamp(3rem,5.6vw,4.1rem)]">
+                Build decks that match <span className="text-primary">your cards</span> and
+                <span className="text-accent"> your playstyle</span>
+              </h1>
+              <p className="mt-6 mx-auto max-w-[min(40rem,88vw)] text-base text-text-muted sm:text-lg">
+                Decksy AI analyzes your profile, favorite archetypes, and battle history to recommend
+                decks you&apos;ll actually love to play—then coaches you to climb faster with Gemini-powered
+                explainers.
+              </p>
+              <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
+                <Button size="lg" asChild className="gap-2">
+                  <Link href="#get-started">
+                    Enter your player tag
+                    <ArrowRight className="size-4" />
+                  </Link>
+                </Button>
+                <Button size="lg" variant="secondary" asChild>
+                  <Link href="/deck/sample">See sample deck guide</Link>
+                </Button>
+              </div>
+            </HeroContent>
           </Container>
         </section>
 
