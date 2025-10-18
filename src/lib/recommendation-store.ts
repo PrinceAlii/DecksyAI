@@ -3,6 +3,7 @@ import type { DeckScore, PlayerProfile, QuizResponse } from "@/lib/scoring";
 
 export interface StoredRecommendation {
   sessionId: string;
+  userId?: string;
   player: PlayerProfile;
   quiz: QuizResponse;
   scoreBreakdown: {
