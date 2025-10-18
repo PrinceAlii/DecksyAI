@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { deckCatalog } from "@/lib/data/deck-catalog";
 import {
@@ -6,6 +6,7 @@ import {
   buildPlayerProfileSignature,
   getRecommendation,
   hasProfileDrift,
+  listRecommendations,
   saveRecommendation,
 } from "@/lib/recommendation-store";
 import type { PlayerProfile, QuizResponse } from "@/lib/scoring";
@@ -36,6 +37,15 @@ const sampleQuiz: QuizResponse = {
   riskTolerance: "mid",
 };
 
+beforeEach(() => {
+  __resetRecommendationStoreForTests();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
+  __resetRecommendationStoreForTests();
+});
+
 describe("buildPlayerProfileSignature", () => {
   it("changes when the player shifts trophy bands", () => {
     const baseline = buildPlayerProfileSignature(samplePlayer);
@@ -56,10 +66,6 @@ describe("buildPlayerProfileSignature", () => {
 });
 
 describe("hasProfileDrift", () => {
-  beforeEach(() => {
-    __resetRecommendationStoreForTests();
-  });
-
   it("detects when stored recommendations no longer match the current profile", () => {
     saveRecommendation({
       sessionId: "session-123",
@@ -89,5 +95,40 @@ describe("hasProfileDrift", () => {
 
     expect(hasProfileDrift(stored, samplePlayer)).toBe(false);
     expect(hasProfileDrift(stored, { ...samplePlayer, trophies: samplePlayer.trophies + 500 })).toBe(true);
+  });
+});
+
+describe("in-memory recommendation TTL", () => {
+  it("evicts expired recommendations to mitigate replay risk", () => {
+    vi.useFakeTimers();
+
+    saveRecommendation({
+      sessionId: "session-ttl",
+      player: samplePlayer,
+      quiz: sampleQuiz,
+      scoreBreakdown: [
+        {
+          deck: sampleDeck.slug,
+          total: 90,
+          breakdown: sampleBreakdown,
+          notes: ["Top pick"],
+        },
+      ],
+      decks: [
+        {
+          deck: sampleDeck,
+          score: 90,
+          breakdown: sampleBreakdown,
+          notes: ["Top pick"],
+        },
+      ],
+    });
+
+    expect(getRecommendation("session-ttl")).toBeDefined();
+
+    vi.advanceTimersByTime(30 * 60 * 1000 + 1);
+
+    expect(getRecommendation("session-ttl")).toBeUndefined();
+    expect(listRecommendations()).toHaveLength(0);
   });
 });

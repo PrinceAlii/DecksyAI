@@ -2,6 +2,8 @@ import Redis from "ioredis";
 
 import { getServerEnv, isDevelopment } from "@/lib/env";
 
+let insecureRedisWarningEmitted = false;
+
 let client: Redis | null = null;
 
 export function getRedis(): Redis | null {
@@ -9,7 +11,8 @@ export function getRedis(): Redis | null {
     return client;
   }
 
-  const { REDIS_URL } = getServerEnv();
+  const env = getServerEnv();
+  const { REDIS_URL } = env;
 
   if (!REDIS_URL) {
     if (isDevelopment()) {
@@ -20,7 +23,7 @@ export function getRedis(): Redis | null {
 
   // Opt-in TLS behavior: only disable certificate verification when the
   // env var REDIS_TLS_ALLOW_SELF_SIGNED is set to true and the URL uses TLS.
-  const { REDIS_TLS_ALLOW_SELF_SIGNED, REDIS_ALLOW_INSECURE_TLS } = getServerEnv();
+  const { REDIS_TLS_ALLOW_SELF_SIGNED, REDIS_ALLOW_INSECURE_TLS } = env;
   const isTls = REDIS_URL.startsWith("rediss://");
 
   const redisOptions: Record<string, unknown> = {
@@ -38,6 +41,13 @@ export function getRedis(): Redis | null {
   );
 
   if (isTls && allowInsecure) {
+    if ((REDIS_TLS_ALLOW_SELF_SIGNED || REDIS_ALLOW_INSECURE_TLS) && !insecureRedisWarningEmitted) {
+      console.warn(
+        "[redis] Insecure TLS verification disabled via REDIS_TLS_ALLOW_SELF_SIGNED/REDIS_ALLOW_INSECURE_TLS. Use only in local development and monitor deployments closely.",
+      );
+      insecureRedisWarningEmitted = true;
+    }
+
     // Note: disabling rejectUnauthorized weakens TLS verification. Use only
     // when you understand the security implications (e.g., quick Heroku
     // workaround). Prefer providing a proper CA when possible.

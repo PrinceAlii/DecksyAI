@@ -21,7 +21,13 @@ export interface StoredRecommendation {
   profileSignature: string;
 }
 
-const store = new Map<string, StoredRecommendation>();
+interface RecommendationEntry {
+  record: StoredRecommendation;
+  expiresAt: number;
+}
+
+const store = new Map<string, RecommendationEntry>();
+const IN_MEMORY_TTL_MS = 30 * 60 * 1000; // 30 minutes
 
 const TROPHY_BAND_SIZE = 200;
 
@@ -61,17 +67,47 @@ export function hasProfileDrift(record: StoredRecommendation, player: PlayerProf
   return record.profileSignature !== buildPlayerProfileSignature(player);
 }
 
+function now(): number {
+  return Date.now();
+}
+
+function purgeExpiredEntries(): void {
+  const currentTime = now();
+  for (const [key, entry] of store.entries()) {
+    if (entry.expiresAt <= currentTime) {
+      store.delete(key);
+    }
+  }
+}
+
 export function saveRecommendation(record: Omit<StoredRecommendation, "profileSignature">) {
   const signature = buildPlayerProfileSignature(record.player);
-  store.set(record.sessionId, { ...record, profileSignature: signature });
+  store.set(record.sessionId, {
+    record: { ...record, profileSignature: signature },
+    expiresAt: now() + IN_MEMORY_TTL_MS,
+  });
 }
 
 export function getRecommendation(sessionId: string): StoredRecommendation | undefined {
-  return store.get(sessionId);
+  purgeExpiredEntries();
+  const entry = store.get(sessionId);
+  if (!entry) {
+    return undefined;
+  }
+
+  if (entry.expiresAt <= now()) {
+    store.delete(sessionId);
+    return undefined;
+  }
+
+  return entry.record;
 }
 
 export function listRecommendations(): StoredRecommendation[] {
-  return Array.from(store.values()).sort((a, b) => (a.sessionId > b.sessionId ? -1 : 1));
+  purgeExpiredEntries();
+  return Array.from(store.values())
+    .map((entry) => entry.record)
+    .sort((a, b) => (a.sessionId > b.sessionId ? -1 : 1));
 }
 
 export function __resetRecommendationStoreForTests() {

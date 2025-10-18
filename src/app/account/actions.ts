@@ -384,9 +384,19 @@ export async function revokeSessionsAction(
   }
 
   const userId = session.user.id;
+  const userEmail = session.user.email;
 
   try {
-    await prisma.session.deleteMany({ where: { userId } });
+    await prisma.$transaction(async (tx) => {
+      await tx.session.deleteMany({ where: { userId } });
+
+      const email =
+        userEmail ?? (await tx.user.findUnique({ where: { id: userId }, select: { email: true } }))?.email ?? null;
+
+      if (email) {
+        await tx.verificationToken.deleteMany({ where: { identifier: email } });
+      }
+    });
     await recordAuditLog("auth.sessions_revoked", { actorId: userId });
     revalidatePath("/account");
     return { status: "success", message: "All sessions revoked. Sign in again to continue." };
