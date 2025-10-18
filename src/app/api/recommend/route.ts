@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
   const explainers = await Promise.all(
     scores.map(async (score) => ({
       slug: score.deck.slug,
-      explainer: await generateExplainer(score.deck, score, body.player),
+      explainer: await generateExplainer(score.deck, score, body.player, body.preferences),
     })),
   );
 

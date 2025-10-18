@@ -37,6 +37,7 @@ export interface DeckScore {
 export interface RecommendationPayload {
   player: PlayerProfile;
   quiz: QuizResponse;
+  preferences?: string;
   userId?: string;
   sessionId?: string;
   feedbackPreferences?: FeedbackPreferences;
@@ -390,6 +391,77 @@ export function scoreDeck(
   };
 }
 
+function filterDecksByPreferences(decks: DeckDefinition[], preferences?: string): DeckDefinition[] {
+  if (!preferences?.trim()) {
+    return decks;
+  }
+
+  const lowerPrefs = preferences.toLowerCase();
+  
+  // Extract keywords and negative keywords
+  const hasLogbait = lowerPrefs.includes('logbait') || lowerPrefs.includes('log bait');
+  const hasBalloon = lowerPrefs.includes('balloon') || lowerPrefs.includes('loon');
+  const hasHog = lowerPrefs.includes('hog');
+  const hasGraveyard = lowerPrefs.includes('graveyard') || lowerPrefs.includes('gy');
+  const hasMiner = lowerPrefs.includes('miner');
+  const hasXbow = lowerPrefs.includes('xbow') || lowerPrefs.includes('x-bow');
+  const hasMortar = lowerPrefs.includes('mortar');
+  const hasGolem = lowerPrefs.includes('golem');
+  const hasGiant = lowerPrefs.includes('giant');
+  const hasPekka = lowerPrefs.includes('pekka');
+  const hasMegaKnight = lowerPrefs.includes('mega knight') || lowerPrefs.includes('mk');
+  
+  // Check for "no X" patterns
+  const noBalloon = lowerPrefs.match(/\bno\s+(?:balloon|loon)/i);
+  const noHog = lowerPrefs.match(/\bno\s+hog/i);
+  const noGraveyard = lowerPrefs.match(/\bno\s+(?:graveyard|gy)/i);
+  const noMiner = lowerPrefs.match(/\bno\s+miner/i);
+  const noXbow = lowerPrefs.match(/\bno\s+(?:xbow|x-bow)/i);
+  const noMortar = lowerPrefs.match(/\bno\s+mortar/i);
+  const noGolem = lowerPrefs.match(/\bno\s+golem/i);
+  const noGiant = lowerPrefs.match(/\bno\s+giant/i);
+  const noPekka = lowerPrefs.match(/\bno\s+pekka/i);
+  const noMegaKnight = lowerPrefs.match(/\bno\s+(?:mega\s+knight|mk)/i);
+
+  return decks.filter((deck) => {
+    const deckNameLower = deck.name.toLowerCase();
+    const deckCards = deck.cards.map(c => c.name.toLowerCase());
+    const deckHasCard = (cardName: string) => deckCards.some(c => c.includes(cardName));
+    
+    // Apply negative filters first (exclusions)
+    if (noBalloon && deckHasCard('balloon')) return false;
+    if (noHog && deckHasCard('hog')) return false;
+    if (noGraveyard && deckHasCard('graveyard')) return false;
+    if (noMiner && deckHasCard('miner')) return false;
+    if (noXbow && deckHasCard('x-bow')) return false;
+    if (noMortar && deckHasCard('mortar')) return false;
+    if (noGolem && deckHasCard('golem')) return false;
+    if (noGiant && deckHasCard('giant')) return false;
+    if (noPekka && deckHasCard('pekka')) return false;
+    if (noMegaKnight && deckHasCard('mega knight')) return false;
+    
+    // Apply positive filters (requirements)
+    if (hasLogbait && (deckNameLower.includes('bait') || deckHasCard('goblin barrel'))) return true;
+    if (hasBalloon && deckHasCard('balloon')) return true;
+    if (hasHog && deckHasCard('hog')) return true;
+    if (hasGraveyard && deckHasCard('graveyard')) return true;
+    if (hasMiner && deckHasCard('miner')) return true;
+    if (hasXbow && deckHasCard('x-bow')) return true;
+    if (hasMortar && deckHasCard('mortar')) return true;
+    if (hasGolem && deckHasCard('golem')) return true;
+    if (hasGiant && deckHasCard('giant')) return true;
+    if (hasPekka && deckHasCard('pekka')) return true;
+    if (hasMegaKnight && deckHasCard('mega knight')) return true;
+    
+    // If no positive filters matched but there were positive keywords, exclude this deck
+    const hasAnyPositiveFilter = hasLogbait || hasBalloon || hasHog || hasGraveyard || 
+                                  hasMiner || hasXbow || hasMortar || hasGolem || 
+                                  hasGiant || hasPekka || hasMegaKnight;
+    
+    return !hasAnyPositiveFilter;
+  });
+}
+
 export function rankDecks(decks: DeckDefinition[], payload: RecommendationPayload): DeckScore[] {
   const strategy = resolveWeightStrategy(payload);
 
@@ -406,7 +478,13 @@ export function rankDecks(decks: DeckDefinition[], payload: RecommendationPayloa
     });
   }
 
-  const scores = decks.map((deck) => scoreDeck(deck, payload, strategy)).sort((a, b) => b.score - a.score);
+  // Filter decks based on user preferences
+  const filteredDecks = filterDecksByPreferences(decks, payload.preferences);
+  
+  // If filtering resulted in no decks, fall back to all decks
+  const decksToScore = filteredDecks.length > 0 ? filteredDecks : decks;
+
+  const scores = decksToScore.map((deck) => scoreDeck(deck, payload, strategy)).sort((a, b) => b.score - a.score);
   const top = scores.slice(0, 3);
 
   if (strategy.variant !== strategy.defaultVariant) {

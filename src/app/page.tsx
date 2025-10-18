@@ -1,9 +1,8 @@
 import { ArrowRight, Sparkles, Trophy } from "lucide-react";
 import Link from "next/link";
-import Image from "next/image";
+import { redirect } from "next/navigation";
 import type { Route } from "next";
 
-import { SignOutButton } from "@/components/features/auth/sign-out-button";
 import { PlayerOnboarding } from "@/components/features/player-onboarding";
 import { HeroBackground } from "@/components/marketing/hero-background";
 import { HeroContent } from "@/components/marketing/hero-content";
@@ -11,50 +10,28 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { GradientText } from "@/components/ui/gradient-text";
+import { SiteHeader } from "@/components/ui/site-header";
 import { getServerAuthSession } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export default async function HomePage() {
   const session = await getServerAuthSession();
 
+  // If user is logged in and has a player tag, redirect to search page with their tag
+  if (session?.user?.id && prisma) {
+    const profile = await prisma.profile.findUnique({
+      where: { userId: session.user.id },
+      select: { playerTag: true },
+    });
+    
+    if (profile?.playerTag) {
+      redirect(`/search?tag=${encodeURIComponent(profile.playerTag)}`);
+    }
+  }
+
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <header className="border-b border-border/60 bg-surface/60 backdrop-blur">
-        <Container className="flex h-16 items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 text-lg font-semibold">
-            <Image
-              src="/logo.svg"
-              alt="Decksy AI"
-              width={32}
-              height={32}
-              className="size-8"
-            />
-            Decksy AI
-          </Link>
-          <nav className="flex items-center gap-3 text-sm text-text-muted">
-            <Link href={"/account" as Route} className="transition hover:text-text">
-              Account
-            </Link>
-            {session?.user ? (
-              <>
-                <span className="hidden text-xs text-text-muted sm:inline">
-                  {session.user.email ?? "Signed in"}
-                </span>
-                <SignOutButton
-                  variant="outline"
-                  size="sm"
-                  label="Sign out"
-                  redirectTo="/"
-                  className="text-xs"
-                />
-              </>
-            ) : (
-              <Button asChild variant="outline" size="sm">
-                <Link href={"/login" as Route}>Log in</Link>
-              </Button>
-            )}
-          </nav>
-        </Container>
-      </header>
+      <SiteHeader />
 
       <main className="flex-1">
         <section className="relative overflow-hidden border-b border-border/60 py-20">
@@ -96,12 +73,27 @@ export default async function HomePage() {
               <Card className="p-6">
                 <CardContent className="p-0">
                   <CardHeader icon={<Trophy className="size-5" />} className="gap-4">
-                    <div>
+                    <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-text">Tailored for your climb</h3>
-                      <p className="mt-1 text-sm text-text-muted">
+                      <p className="text-sm text-text-muted">
                         Decksy scores decks against your arena, trophies, and card levels using a transparent
-                        rules engine.
+                        rules engine. Every recommendation is ranked based on how well it matches your
+                        current progression.
                       </p>
+                      <ul className="space-y-2 text-sm text-text-muted">
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-primary">•</span>
+                          <span>Analyzes your card collection and levels</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-primary">•</span>
+                          <span>Considers your current trophy range</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-primary">•</span>
+                          <span>Matches decks to your arena meta</span>
+                        </li>
+                      </ul>
                     </div>
                   </CardHeader>
                 </CardContent>
@@ -110,12 +102,26 @@ export default async function HomePage() {
               <Card className="p-6">
                 <CardContent className="p-0">
                   <CardHeader icon={<Sparkles className="size-5" />} className="gap-4">
-                    <div>
+                    <div className="space-y-3">
                       <h3 className="text-lg font-semibold text-text">AI explainers that teach</h3>
-                      <p className="mt-1 text-sm text-text-muted">
-                        AI summarizes win conditions, matchups, and safe substitutions so you know what to
-                        practice first.
+                      <p className="text-sm text-text-muted">
+                        Powered by Google Gemini, our AI analyzes each recommended deck to provide
+                        personalized coaching insights you can actually use to improve your gameplay.
                       </p>
+                      <ul className="space-y-2 text-sm text-text-muted">
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-accent">•</span>
+                          <span>Win conditions and key card combos</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-accent">•</span>
+                          <span>Matchup strengths and weaknesses</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <span className="mt-0.5 text-accent">•</span>
+                          <span>Safe card substitutions if needed</span>
+                        </li>
+                      </ul>
                     </div>
                   </CardHeader>
                 </CardContent>

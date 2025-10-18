@@ -73,14 +73,18 @@ const geminiExplainerSchema = z.object({
 
 type GeminiExplainerPayload = z.infer<typeof geminiExplainerSchema>;
 
-export function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile): string {
+export function buildPrompt(deck: DeckDefinition, score: DeckScore, player: PlayerProfile, preferences?: string): string {
   const cardList = deck.cards.map((card) => card.name).join(", ");
   const trophyText = typeof player.trophies === "number" ? `${player.trophies} trophies` : "unknown trophy count";
   const arenaText = player.arena ? `Arena ${player.arena}` : "an unknown arena";
+  
+  const preferencesText = preferences?.trim() 
+    ? ` The player specifically requested: "${preferences}". Take this into account when explaining why this deck fits.`
+    : "";
 
   return [
     "You are Decksy AI, an expert Clash Royale strategy assistant.",
-    `Explain why the deck ${deck.name} matches this player who is at ${trophyText} in ${arenaText}. Focus on skill fit, collection readiness, and tempo guidance without mentioning any player names or tags.`,
+    `Explain why the deck ${deck.name} matches this player who is at ${trophyText} in ${arenaText}. Focus on skill fit, collection readiness, and tempo guidance without mentioning any player names or tags.${preferencesText}`,
     `Deck cards: ${cardList}.`,
     `Score breakdown (0-100): collection ${score.breakdown.collection}, trophies ${score.breakdown.trophies}, playstyle ${score.breakdown.playstyle}, difficulty ${score.breakdown.difficulty}.`,
     "Tone requirements: confident, encouraging, and tactical. Open with the key win condition, then provide actionable sequencing tips and matchup posture.",
@@ -181,6 +185,7 @@ export async function* generateExplainerStream(
   deck: DeckDefinition,
   score: DeckScore,
   player: PlayerProfile,
+  preferences?: string,
 ): AsyncGenerator<GeminiExplainerStreamEvent, GeminiExplainer, void> {
   const env = getServerEnv();
   const fallback = fallbackExplainer(deck, score, player);
@@ -211,7 +216,7 @@ export async function* generateExplainerStream(
     ),
   );
 
-  const prompt = buildPrompt(deck, score, player);
+  const prompt = buildPrompt(deck, score, player, preferences);
 
   for (const modelId of candidateModels) {
     try {
@@ -266,8 +271,9 @@ export async function generateExplainer(
   deck: DeckDefinition,
   score: DeckScore,
   player: PlayerProfile,
+  preferences?: string,
 ): Promise<GeminiExplainer> {
-  const iterator = generateExplainerStream(deck, score, player);
+  const iterator = generateExplainerStream(deck, score, player, preferences);
   let latest: GeminiExplainer | null = null;
 
   while (true) {

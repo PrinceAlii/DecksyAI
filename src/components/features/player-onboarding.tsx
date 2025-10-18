@@ -59,12 +59,17 @@ const quizSections = [
   icon: LucideIcon;
 }>;
 
-export function PlayerOnboarding() {
+interface PlayerOnboardingProps {
+  initialPlayerTag?: string;
+}
+
+export function PlayerOnboarding({ initialPlayerTag }: PlayerOnboardingProps = {}) {
   const router = useRouter();
-  const [playerTag, setPlayerTag] = useState("");
+  const [playerTag, setPlayerTag] = useState(initialPlayerTag || "");
   const [player, setPlayer] = useState<PlayerProfile | null>(null);
   const [battles, setBattles] = useState<BattleLogEntry[]>([]);
   const [quiz, setQuiz] = useState<QuizResponse>(quizDefaults);
+  const [preferences, setPreferences] = useState("");
   const [step, setStep] = useState<1 | 2 | 3>(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -142,6 +147,7 @@ export function PlayerOnboarding() {
       const payload = {
         player,
         quiz,
+        preferences: preferences.trim() || undefined,
       };
       
       console.log("Sending recommendation payload:", JSON.stringify(payload, null, 2));
@@ -350,6 +356,24 @@ export function PlayerOnboarding() {
                         </div>
                       );
                     })}
+                  </div>
+
+                  <div className="space-y-2">
+                    <label htmlFor="preferences" className="text-sm font-medium text-text">
+                      Deck preferences <span className="text-text-muted">(optional)</span>
+                    </label>
+                    <Input
+                      id="preferences"
+                      type="text"
+                      placeholder="e.g., logbait deck, no balloon, prefer hog rider..."
+                      value={preferences}
+                      onChange={(e) => setPreferences(e.target.value)}
+                      maxLength={200}
+                      className="w-full"
+                    />
+                    <p className="text-xs text-text-muted">
+                      Describe what you&apos;re looking for and we&apos;ll tailor recommendations to your preferences
+                    </p>
                   </div>
 
                   <Button

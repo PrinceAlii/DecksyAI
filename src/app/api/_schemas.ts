@@ -113,6 +113,7 @@ export const recommendationPayloadSchema = z
   .object({
     player: playerProfileSchema,
     quiz: quizResponseSchema,
+    preferences: z.string().max(200).optional(),
     userId: z.string().min(1).optional(),
     sessionId: z.string().uuid().optional(),
     feedbackPreferences: z

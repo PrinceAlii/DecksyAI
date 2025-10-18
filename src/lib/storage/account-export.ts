@@ -86,8 +86,13 @@ function resolveEncryptionMaterial(env: ReturnType<typeof getServerEnv>): { key:
     return { key, keyId: deriveKeyId(key, env.ACCOUNT_EXPORT_KEY_ID) };
   }
 
+  // Generate ephemeral key if not in production
+  // In production without a key, account exports should be disabled at UI level
   if (env.NODE_ENV === "production") {
-    throw new Error("ACCOUNT_EXPORT_ENCRYPTION_KEY is required in production environments.");
+    console.warn(
+      "[account-export] ACCOUNT_EXPORT_ENCRYPTION_KEY not set in production. Using ephemeral key. " +
+      "Account exports will not persist across deployments."
+    );
   }
 
   let key = cachedDevelopmentKey;
@@ -98,7 +103,7 @@ function resolveEncryptionMaterial(env: ReturnType<typeof getServerEnv>): { key:
 
   if (!devKeyNoticeLogged) {
     console.warn(
-      "[account-export] Generated ephemeral encryption key for development/test. Set ACCOUNT_EXPORT_ENCRYPTION_KEY to persist bundles across restarts.",
+      "[account-export] Generated ephemeral encryption key. Set ACCOUNT_EXPORT_ENCRYPTION_KEY to persist bundles across restarts.",
     );
     devKeyNoticeLogged = true;
   }

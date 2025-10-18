@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
 import { GradientText } from "@/components/ui/gradient-text";
+import { SiteHeader } from "@/components/ui/site-header";
 import { getCardArtUrl } from "@/lib/data/card-art";
 import { getDeckBySlug } from "@/lib/data/deck-catalog";
 
@@ -28,7 +29,9 @@ export default function SampleDeckGuidePage() {
   }
 
   return (
-    <div className="bg-background pb-24">
+    <div className="flex min-h-screen flex-col bg-background">
+      <SiteHeader />
+      <div className="flex-1 pb-24">
       <section className="border-b border-border/60 bg-surface/60 py-16">
         <Container className="space-y-10">
           <Button asChild variant="ghost" className="gap-2 text-text-muted hover:text-text">
@@ -208,6 +211,7 @@ export default function SampleDeckGuidePage() {
           </div>
         </Container>
       </section>
+      </div>
     </div>
   );
 }

@@ -127,11 +127,8 @@ export function getServerEnv(): Env {
         );
       }
 
-      if (!data.ACCOUNT_EXPORT_ENCRYPTION_KEY?.trim()) {
-        throw new Error(
-          "ACCOUNT_EXPORT_ENCRYPTION_KEY is required in production to encrypt account export bundles.",
-        );
-      }
+      // Note: ACCOUNT_EXPORT_ENCRYPTION_KEY is optional but recommended.
+      // If not set, account export feature will be disabled in the UI.
     }
 
     // Insecure TLS flags should never be used outside development (runtime check)

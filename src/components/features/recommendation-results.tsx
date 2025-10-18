@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Loader2, MessageCircle, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
+import { ArrowLeft, Droplet, Loader2, MessageCircle, Sparkles, ThumbsDown, ThumbsUp } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -141,6 +141,13 @@ export function RecommendationResults({
                       <p className="text-sm text-text-muted">{activeDeck.deck.description}</p>
                     </div>
                     <div className="flex items-center gap-3 rounded-lg border border-primary/20 bg-background/80 px-4 py-3 text-right shadow-inner">
+                      <Image 
+                        src="/elixir.png"
+                        alt="Elixir"
+                        width={20}
+                        height={20}
+                        className="size-5"
+                      />
                       <span className="text-sm text-text-muted">Average elixir</span>
                       <span className="text-2xl font-semibold text-accent">{activeDeck.deck.averageElixir.toFixed(1)}</span>
                     </div>
