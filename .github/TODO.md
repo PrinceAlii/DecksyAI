@@ -1,4 +1,4 @@
-# Decksy AI — Master Roadmap (Next 12 Months)
+ # Decksy AI - Master Roadmap (Next 12 Months)
 
 Purpose: This is the living roadmap for Decksy AI. It captures product direction, quarterly themes, prioritized epics, and Jira-style tasks with acceptance criteria. Update this file as plans evolve and when work ships.
 
@@ -20,7 +20,7 @@ Last updated: 2025-10-17
   * Deck guide page with coach notes.
   * History list backed by DB or ephemeral store.
   * History session detail view rendering stored breakdowns (`/history/[sessionId]`) with configurable navigation via `RecommendationResults`.
-* Docs & Conventions: `.github/copilot-instructions.md`, `AGENTS.md`, strict TypeScript, `@/*` imports, CVA variants, `cn()` helper.
+* Docs & Conventions: `.github/developer-guidance.md`, `AGENTS.md`, strict TypeScript, `@/*` imports, CVA variants, `cn()` helper.
 
 Known gaps and opportunities:
 * Rate limiting, input validation on all routes, and abuse protections are partial.
@@ -33,7 +33,7 @@ Known gaps and opportunities:
 
 ## Product North Star
 
-Help Clash Royale players climb faster with decks that fit their collection and playstyle—and coach them with concise, actionable insights. Focus areas:
+ Help Clash Royale players climb faster with decks that fit their collection and playstyle - and coach them with concise, actionable insights. Focus areas:
 * Trustworthy suggestions grounded in player data and explicit preferences.
 * Fast, polished, and accessible UX.
 * Clear coaching that improves player skill over time.
@@ -42,16 +42,16 @@ Help Clash Royale players climb faster with decks that fit their collection and 
 
 ## Quarterly Themes (12-Month View)
 
-Q4 2025 — Foundations and Insights
+ Q4 2025 - Foundations and Insights
 * Ship analytics/monitoring, expand deck catalog, add route validation and rate limiting, and improve coach reliability.
 
-Q1 2026 — Personalization and Retention
+ Q1 2026 - Personalization and Retention
 * Feedback-driven tuning of scoring, scheduled profile refresh, onboarding polish, and coach v2 (practice plans, streaming UI).
 
-Q2 2026 — Scale and Performance
+ Q2 2026 - Scale and Performance
 * Feature flags/experimentation, caching and edge strategy, a11y/i18n improvements, and deeper testing (e2e + integration).
 
-Q3 2026 — Depth and Discovery
+ Q3 2026 - Depth and Discovery
 * Advanced matchup intelligence, deck discovery filters, social sharing, and optional premium features exploration.
 
 
@@ -59,7 +59,7 @@ Q3 2026 — Depth and Discovery
 
 Format:
 * [Epic] Title
-  * TASK-ID: Summary — Description
+  * TASK-ID: Summary - Description
     * Acceptance
     * Dependencies
     * Estimate
@@ -136,7 +136,7 @@ Format:
   * Owner: Platform
 
 
-### [Epic] Coach v2 (Gemini) — Reliability and Utility
+ ### [Epic] Coach v2 (Gemini) - Reliability and Utility
 
 * COACH-1: Streaming and progressive UI
   * Stream Gemini summaries to the UI with loading states; keep JSON schema integrity.
@@ -372,7 +372,7 @@ Q3 2026
 * Server-only keys behind route handlers; never expose in client.
 * Prefer server components; use client components only for interactivity.
 * Use `cn()` for class merging and CVA for variants.
-* Strong typing end-to-end; no `any`—prefer `unknown` with parsing.
+ * Strong typing end-to-end; no `any` - prefer `unknown` with parsing.
 * Tests for public behavior; cache keys and env-sensitive logic covered by unit tests.
 
 
@@ -393,7 +393,7 @@ Q3 2026
 ## Open Questions
 
 * Monetization: Should we explore optional premium features (saved coach plans, deeper analytics)?
-* Platform: Vercel vs Heroku for cron and edge capabilities—finalize and document.
+ * Platform: Vercel vs Heroku for cron and edge capabilities - finalize and document.
 * Community features: Are team/clan features in scope for v1?
 
 

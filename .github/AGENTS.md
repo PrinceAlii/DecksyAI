@@ -18,7 +18,7 @@
 
 The core agent guidelines are documented in `AGENTS.md` (the shorter version). This combined file includes additional reference sections from the `.github` folder:
 
-- `copilot-instructions.md` — Copilot-specific developer & style guidance
+ - `developer-guidance.md` — Developer-specific developer & style guidance
 - `gemini-models.md` — Gemini API model snapshot
 - `plan.md` — Delivery & release notes / plan
 - `Project_Spec.md` — Full product & technical specification

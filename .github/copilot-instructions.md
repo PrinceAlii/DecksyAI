@@ -1,6 +1,6 @@
-# Copilot Instructions for Decksy AI (Combined)
+# Developer Guidance for Decksy AI (Combined)
 
-This file is a copy of the merged `.github` documentation and contains Copilot-specific guidance, coding patterns, and project conventions.
+This file is a copy of the merged `.github` documentation and contains developer guidance, coding patterns, and project conventions.
 
 ## Overview
 
@@ -16,7 +16,7 @@ Decksy AI is a Next.js 14 App Router application that provides Clash Royale play
 For full project guidance, see `.github/AGENTS.md` and `Project_Spec.md`.
 
 **Last updated:** November 24, 2025
-# Copilot Instructions for Decksy AI
+# Developer Guidance for Decksy AI
 
 ## Project Overview
 Decksy AI is a Next.js 14 App Router application that provides Clash Royale players with personalized deck recommendations powered by AI. The app analyzes player data via the Clash Royale API, scores decks using a rules-based engine, and generates coaching insights with Google Gemini.
@@ -25,7 +25,7 @@ Decksy AI is a Next.js 14 App Router application that provides Clash Royale play
 
 ### Tech Stack
 ````instructions
-# Copilot Instructions for Decksy AI
+# Developer Guidance for Decksy AI
 
 ## Project Overview
 Decksy AI is a Next.js 14 App Router application that provides Clash Royale players with personalized deck recommendations powered by AI. The app analyzes player data via the Clash Royale API, scores decks using a rules-based engine, and generates coaching insights with Google Gemini.

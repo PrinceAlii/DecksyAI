@@ -47,7 +47,7 @@ export default async function HomePage() {
               </h1>
               <p className="mt-6 mx-auto max-w-[min(40rem,88vw)] text-base text-text-muted sm:text-lg">
                 Decksy AI analyzes your profile, favorite archetypes, and battle history to recommend
-                decks you&apos;ll actually love to play—then coaches you to climb faster with Gemini-powered
+                decks you&apos;ll actually love to play, then coaches you to climb faster with Gemini-powered
                 explainers.
               </p>
               <div className="mt-10 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">

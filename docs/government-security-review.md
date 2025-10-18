@@ -35,7 +35,7 @@ This document captures the government-grade production security review executed 
 - `/api/recommend` enforces rate limits, zod validation, and persists payloads via Prisma upsert with fallback to in-memory store. Explainable AI responses are schema-validated before returning (`src/app/api/recommend/route.ts`).
 - `/api/coach` ensures deck lookup, optional streaming NDJSON with context gating, and fallback when recommendation context unavailable (`src/app/api/coach/route.ts`).
 - `/api/feedback` layers primary + UA token buckets and blocklists suspicious agents before persisting feedback (`src/app/api/feedback/route.ts`).
-- Reviewed `src/app/api/player/[tag]/route.ts` and `src/app/api/battles/[tag]/route.ts` for parameter sanitisation—both rely on strict zod schemas before proxying external data.
+- Reviewed `src/app/api/player/[tag]/route.ts` and `src/app/api/battles/[tag]/route.ts` for parameter sanitisation - both rely on strict zod schemas before proxying external data.
 - **Finding GSR-004 (Low):** Recommendation GET endpoint does not expire in-memory sessions; consider TTL eviction to reduce replay risk if session IDs leak (`src/lib/recommendation-store.ts`).
 
 ## 7. Data protection & privacy assessment

@@ -178,7 +178,7 @@ CREATE INDEX "CustomDeck_userId_createdAt_idx"
 ---
 
 **Implementation Date:** October 18, 2025  
-**Developer:** GitHub Copilot  
+**Developer:** Internal
 **Status:** ✅ **READY FOR DEPLOYMENT**  
 **Build:** Passing (19/19 pages generated)  
 **Documentation:** Complete

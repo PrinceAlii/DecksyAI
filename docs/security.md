@@ -21,11 +21,11 @@ Primary attacker motivations: credential stuffing (re-use of OAuth emails), scra
 
 ## Key mitigations
 
-- **Authentication & authorisation** — Auth.js + Prisma adapter, OAuth account linking, audit logging for profile/session changes.
-- **Rate limiting** — Token bucket on all `/api/*` routes via `enforceRateLimit`, falling back to in-memory limiter when Redis is unavailable.
-- **Data minimisation** — Decksy only persists recommendation payloads tied to sessions or opted-in accounts; exports produce signed JSON bundles stored outside of the request path.
-- **Consent management** — Cookie consent banner defers analytics until the user opts in and stores the decision in both cookies and Postgres.
-- **Account lifecycle** — New server actions export JSON bundles to filesystem storage and transactional account deletion clears linked recommendations, feedback, sessions, and consent metadata.
+- **Authentication & authorisation** - Auth.js + Prisma adapter, OAuth account linking, audit logging for profile/session changes.
+- **Rate limiting** - Token bucket on all `/api/*` routes via `enforceRateLimit`, falling back to in-memory limiter when Redis is unavailable.
+- **Data minimisation** - Decksy only persists recommendation payloads tied to sessions or opted-in accounts; exports produce signed JSON bundles stored outside of the request path.
+- **Consent management** - Cookie consent banner defers analytics until the user opts in and stores the decision in both cookies and Postgres.
+- **Account lifecycle** - New server actions export JSON bundles to filesystem storage and transactional account deletion clears linked recommendations, feedback, sessions, and consent metadata.
 
 ## Rate-limit penetration test results
 
