@@ -9,6 +9,19 @@ Decksy AI is a Next.js 14 application that helps Clash Royale players discover d
 - **Account & authentication** using Auth.js (magic links + GitHub OAuth), Prisma persistence, audit logging, and self-serve session revocation.
 - **Responsive dark UI** powered by Tailwind CSS, Radix primitives, and bespoke Clash Royale card artwork placeholders.
 
+## Player Tag Format
+
+Decksy AI uses the Clash Royale API to fetch player data. Player tags must:
+
+- Use only these characters: `0`, `2`, `8`, `9`, `P`, `Y`, `L`, `Q`, `G`, `R`, `J`, `C`, `U`, `V`
+- Be 7-14 characters long
+- The app automatically normalizes tags (strips `#`, uppercases, removes separators, corrects common mistakes like `O` → `0`)
+
+Examples of valid input:
+- `#2L2098J` (7 characters)
+- `py lqgrjc` (normalized to `PYLQGRJC`)
+- `o28yqgrj` (normalized to `028YQGRJ`, `O` corrected to `0`)
+
 ## Getting Started
 
 ```bash

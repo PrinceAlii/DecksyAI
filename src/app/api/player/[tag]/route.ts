@@ -6,7 +6,8 @@ import { fetchPlayerProfile } from "@/lib/clash-royale";
 export async function GET(_: Request, { params }: { params: { tag: string } }) {
   const parsedParams = playerTagParamSchema.safeParse(params);
   if (!parsedParams.success) {
-    return NextResponse.json(errorResponseSchema.parse({ error: "Invalid tag" }), { status: 400 });
+    const errorMessage = parsedParams.error.errors[0]?.message ?? "Invalid tag";
+    return NextResponse.json(errorResponseSchema.parse({ error: errorMessage }), { status: 400 });
   }
 
   try {

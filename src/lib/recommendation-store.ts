@@ -73,7 +73,7 @@ function now(): number {
 
 function purgeExpiredEntries(): void {
   const currentTime = now();
-  for (const [key, entry] of store.entries()) {
+  for (const [key, entry] of Array.from(store.entries())) {
     if (entry.expiresAt <= currentTime) {
       store.delete(key);
     }

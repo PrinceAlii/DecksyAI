@@ -116,7 +116,10 @@ export function getServerEnv(): Env {
 
     const data = result.data;
 
-    if (data.NODE_ENV === "production") {
+    // Skip strict validation during build time (when NEXT_PHASE is set)
+    const isBuildTime = process.env.NEXT_PHASE === "phase-production-build";
+
+    if (data.NODE_ENV === "production" && !isBuildTime) {
       if (!data.NEXTAUTH_SECRET?.trim()) {
         throw new Error(
           "NEXTAUTH_SECRET is required in production. Generate a strong secret and set it before starting the server.",

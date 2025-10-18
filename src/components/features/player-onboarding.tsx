@@ -16,6 +16,7 @@ import {
   describePlayerTagRequirements,
   isValidPlayerTag,
   normalizePlayerTag,
+  playerTagValidationMessage,
 } from "@/lib/player-tag";
 
 interface BattleLogEntry {
@@ -76,15 +77,8 @@ export function PlayerOnboarding() {
       return null;
     }
 
-    if (normalizedTag.length === 0) {
-      return "Only enter characters found in Clash Royale tags.";
-    }
-
-    const remaining = Math.max(MIN_PLAYER_TAG_LENGTH - normalizedTag.length, 0);
-    return remaining > 0
-      ? `Add ${remaining} more ${remaining === 1 ? "character" : "characters"} to reach a valid tag.`
-      : null;
-  }, [normalizedTag.length, showInlineValidation]);
+    return playerTagValidationMessage(playerTag);
+  }, [playerTag, showInlineValidation]);
 
   useEffect(() => {
     if (player) {
@@ -105,12 +99,8 @@ export function PlayerOnboarding() {
     const cleanedTag = normalizePlayerTag(playerTag);
 
     if (!isValidPlayerTag(playerTag)) {
-      const remaining = Math.max(MIN_PLAYER_TAG_LENGTH - cleanedTag.length, 0);
-      if (remaining > 0) {
-        setError(`Add ${remaining} more ${remaining === 1 ? "character" : "characters"} to reach a valid tag.`);
-      } else {
-        setError(describePlayerTagRequirements());
-      }
+      const msg = playerTagValidationMessage(playerTag) ?? describePlayerTagRequirements();
+      setError(msg);
       return;
     }
 

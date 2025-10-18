@@ -113,7 +113,7 @@ export default async function HomePage() {
                     <div>
                       <h3 className="text-lg font-semibold text-text">AI explainers that teach</h3>
                       <p className="mt-1 text-sm text-text-muted">
-                        Gemini summarizes win conditions, matchups, and safe substitutions so you know what to
+                        AI summarizes win conditions, matchups, and safe substitutions so you know what to
                         practice first.
                       </p>
                     </div>

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isValidPlayerTag, normalizePlayerTag, playerTagValidationMessage } from "@/lib/player-tag";
 
 export const deckCardSchema = z
   .object({
@@ -187,9 +188,17 @@ export const feedbackListQuerySchema = z
 
 export const playerTagParamSchema = z
   .object({
-    tag: z.string().min(1),
+    tag: z.string().min(1).refine(
+      (tag) => isValidPlayerTag(tag),
+      (tag) => ({
+        message: playerTagValidationMessage(tag) ?? "Invalid player tag format",
+      })
+    ),
   })
-  .strict();
+  .strict()
+  .transform((data) => ({
+    tag: normalizePlayerTag(data.tag),
+  }));
 
 export const battleLogSchema = z
   .array(
